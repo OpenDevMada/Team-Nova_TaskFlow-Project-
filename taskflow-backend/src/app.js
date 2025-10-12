@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const { sequelize } = require('./models/index');
+const apiDocs = require('./config/docs');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -34,6 +35,14 @@ app.get('/health', (req, res) => {
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV
     });
+});
+
+app.get('/docs', (req, res) => {
+  res.json({
+    message: 'TaskFlow API Documentation',
+    version: '1.0.0',
+    endpoints: apiDocs.endpoints
+  });
 });
 
 app.use(notFoundHandler); // Gère les 404
