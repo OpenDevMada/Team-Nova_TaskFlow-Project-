@@ -3,8 +3,8 @@
  * Capture toutes les erreurs de l'application et renvoie des réponses standardisées
  */
 
-import { Sequelize } from 'sequelize';
-import { ValidationError, DatabaseError, UniqueConstraintError, ForeignKeyConstraintError } from 'sequelize';
+const { Sequelize } = require('sequelize');
+const { ValidationError, DatabaseError, UniqueConstraintError, ForeignKeyConstraintError } = require('sequelize');
 
 /**
  * Log des erreurs avec différents niveaux selon l'environnement
@@ -35,7 +35,7 @@ const logError = (error, req) => {
 /**
  * Création d'erreur opérationnelle
  */
-export class AppError extends Error {
+class AppError extends Error {
   constructor(message, statusCode, isOperational = true) {
     super(message);
     this.statusCode = statusCode;
@@ -161,7 +161,7 @@ const handleMulterError = (error) => {
 /**
  * Middleware principal de gestion d'erreurs
  */
-export const errorHandler = (error, req, res, next) => {
+const errorHandler = (error, req, res, next) => {
   // Définition des valeurs par défaut
   let statusCode = error.statusCode || 500;
   let message = error.message || 'Erreur interne du serveur';
@@ -175,10 +175,10 @@ export const errorHandler = (error, req, res, next) => {
   let handledError = null;
   
   switch (error.constructor) {
-    case Sequelize.ValidationError:
-    case Sequelize.UniqueConstraintError:
-    case Sequelize.DatabaseError:
-    case Sequelize.ForeignKeyConstraintError:
+    case ValidationError:
+    case UniqueConstraintError:
+    case DatabaseError:
+    case ForeignKeyConstraintError:
     case Sequelize.TimeoutError:
       handledError = handleSequelizeError(error);
       break;
@@ -265,7 +265,7 @@ export const errorHandler = (error, req, res, next) => {
 /**
  * Middleware pour les routes non trouvées
  */
-export const notFoundHandler = (req, res, next) => {
+const notFoundHandler = (req, res, next) => {
   const error = new AppError(
     `Route non trouvée: ${req.method} ${req.originalUrl}`,
     404
@@ -276,6 +276,13 @@ export const notFoundHandler = (req, res, next) => {
 /**
  * Wrapper async pour éviter les try/catch dans les contrôleurs
  */
-export const asyncHandler = (fn) => (req, res, next) => {
+const asyncHandler = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+module.exports = {
+    errorHandler,
+    notFoundHandler, 
+    asyncHandler,
+    AppError
 };

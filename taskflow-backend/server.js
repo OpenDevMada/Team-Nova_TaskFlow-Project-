@@ -1,7 +1,5 @@
-import dotenv from 'dotenv';
-import { app, syncDatabase } from './src/app.js';
-
-dotenv.config();
+require('dotenv').config();
+const { app, syncDatabase } = require('./src/app');
 
 const PORT = process.env.PORT || 5000;
 

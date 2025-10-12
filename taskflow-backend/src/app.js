@@ -1,17 +1,17 @@
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import rateLimit from 'express-rate-limit';
-import { sequelize } from './models/index.js';
-import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+const { sequelize } = require('./models/index');
+const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
 const app = express();
 
 // Middleware de sécurité
 app.use(helmet());
 app.use(cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
     credentials: true
 }));
 
@@ -27,7 +27,6 @@ app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-
 // Route de santé
 app.get('/health', (req, res) => {
     res.json({
@@ -37,20 +36,10 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Routes non trouvées
-app.use(notFoundHandler);
-
+app.use(notFoundHandler); // Gère les 404
 
 // Gestion des erreurs
 app.use(errorHandler);
-
-// Gestion des routes non trouvées
-app.use('*', (req, res) => {
-    res.status(404).json({
-        success: false,
-        message: 'Route non trouvée.'
-    });
-});
 
 // Synchronisation de la base de données
 const syncDatabase = async () => {
