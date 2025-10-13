@@ -1,5 +1,18 @@
+'use strict';
+
+const { Model } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
-  const PasswordReset = sequelize.define('PasswordReset', {
+  class PasswordReset extends Model {
+    static associate(models) {
+      PasswordReset.belongsTo(models.User, { 
+        foreignKey: 'userId', 
+        as: 'user' 
+      });
+    }
+  }
+
+  PasswordReset.init({
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
@@ -18,8 +31,19 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DATE,
       allowNull: true,
       field: 'used_at'
+    },
+    userId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      field: 'user_id',
+      references: {
+        model: 'users',
+        key: 'id'
+      }
     }
   }, {
+    sequelize,
+    modelName: 'PasswordReset',
     tableName: 'password_resets',
     underscored: true,
     timestamps: true,
@@ -34,10 +58,6 @@ module.exports = (sequelize, DataTypes) => {
       }
     ]
   });
-
-  PasswordReset.associate = function(models) {
-    PasswordReset.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
-  };
 
   return PasswordReset;
 };

@@ -3,7 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
-const { sequelize } = require('./models/index');
+const { sequelize, TaskStatus, PriorityLevel } = require('./models/index');
 const apiDocs = require('./config/docs');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
@@ -45,7 +45,10 @@ app.get('/docs', (req, res) => {
   });
 });
 
-app.use(notFoundHandler); // Gère les 404
+// Routes API
+
+// Gestion des routes non trouvées
+app.use(notFoundHandler);
 
 // Gestion des erreurs
 app.use(errorHandler);
@@ -53,13 +56,24 @@ app.use(errorHandler);
 // Synchronisation de la base de données
 const syncDatabase = async () => {
     try {
+         // 1. Authentification
         await sequelize.authenticate();
         console.log('Connexion à la base de données établie.');
 
+        // 2. Synchronisation des modèles
         if (process.env.NODE_ENV === 'development') {
-            await sequelize.sync({ alter: true });
+            await sequelize.sync({ 
+                alter: true  // modifie juste la structure
+            });
             console.log('Base de données synchronisée.');
         }
+
+        // 3. Données de référence
+        console.log('Vérification des données de référence...');
+        await TaskStatus.initData();
+        await PriorityLevel.initData();
+        console.log('Données de référence prêtes.');
+
     } catch (error) {
         console.error('Erreur de connexion à la base de données:', error);
         process.exit(1);

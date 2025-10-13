@@ -1,5 +1,33 @@
+'use strict';
+
+const { Model } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
-  const PriorityLevel = sequelize.define('PriorityLevel', {
+  class PriorityLevel extends Model {
+    static associate(models) {
+      PriorityLevel.hasMany(models.Task, {
+        foreignKey: 'priorityId',
+        as: 'tasks'
+      });
+    }
+
+    static async initData() {
+      const priorities = [
+        { id: 1, name: 'low', weight: 1, color: '#95E1D3' },
+        { id: 2, name: 'medium', weight: 2, color: '#FCE38A' },
+        { id: 3, name: 'high', weight: 3, color: '#F38181' }
+      ];
+
+      for (const priority of priorities) {
+        await this.findOrCreate({
+          where: { id: priority.id },
+          defaults: priority
+        });
+      }
+    }
+  }
+
+  PriorityLevel.init({
     id: {
       type: DataTypes.SMALLINT,
       primaryKey: true,
@@ -19,30 +47,12 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false
     }
   }, {
+    sequelize,
+    modelName: 'PriorityLevel',
     tableName: 'priority_levels',
     underscored: true,
     timestamps: false
   });
-
-  PriorityLevel.associate = function(models) {
-    PriorityLevel.hasMany(models.Task, { foreignKey: 'priorityId', as: 'tasks' });
-  };
-
-  // Données initiales
-  PriorityLevel.initData = async function() {
-    const priorities = [
-      { id: 1, name: 'low', weight: 1, color: '#95E1D3' },
-      { id: 2, name: 'medium', weight: 2, color: '#FCE38A' },
-      { id: 3, name: 'high', weight: 3, color: '#F38181' }
-    ];
-
-    for (const priority of priorities) {
-      await this.findOrCreate({
-        where: { id: priority.id },
-        defaults: priority
-      });
-    }
-  };
 
   return PriorityLevel;
 };

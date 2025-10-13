@@ -1,5 +1,18 @@
+'use strict';
+
+const { Model } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
-  const Notification = sequelize.define('Notification', {
+  class Notification extends Model {
+    static associate(models) {
+      Notification.belongsTo(models.User, { 
+        foreignKey: 'userId', 
+        as: 'user' 
+      });
+    }
+  }
+
+  Notification.init({
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
@@ -42,8 +55,19 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.UUID,
       allowNull: true,
       field: 'related_entity_id'
+    },
+    userId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      field: 'user_id',
+      references: {
+        model: 'users',
+        key: 'id'
+      }
     }
   }, {
+    sequelize,
+    modelName: 'Notification',
     tableName: 'notifications',
     underscored: true,
     timestamps: true,
@@ -55,10 +79,6 @@ module.exports = (sequelize, DataTypes) => {
       }
     ]
   });
-
-  Notification.associate = function(models) {
-    Notification.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
-  };
 
   return Notification;
 };

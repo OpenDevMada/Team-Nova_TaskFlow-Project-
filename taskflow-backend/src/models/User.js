@@ -1,5 +1,51 @@
+'use strict';
+
+const { Model } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
-  const User = sequelize.define('User', {
+  class User extends Model {
+    static associate(models) {
+      // Définir les associations ici
+      User.hasMany(models.Project, { 
+        foreignKey: 'ownerId', 
+        as: 'ownedProjects' 
+      });
+      User.hasMany(models.ProjectMember, { 
+        foreignKey: 'userId', 
+        as: 'projectMemberships' 
+      });
+      User.hasMany(models.Task, { 
+        foreignKey: 'assigneeId', 
+        as: 'assignedTasks' 
+      });
+      User.hasMany(models.Task, { 
+        foreignKey: 'createdBy', 
+        as: 'createdTasks' 
+      });
+      User.hasMany(models.TaskComment, { 
+        foreignKey: 'authorId', 
+        as: 'comments' 
+      });
+      User.hasMany(models.Notification, { 
+        foreignKey: 'userId', 
+        as: 'notifications' 
+      });
+      User.hasMany(models.PasswordReset, { 
+        foreignKey: 'userId', 
+        as: 'passwordResets' 
+      });
+      User.hasMany(models.ActivityLog, { 
+        foreignKey: 'userId', 
+        as: 'activities' 
+      });
+      User.hasMany(models.ProjectMember, { 
+        foreignKey: 'invitedBy', 
+        as: 'invitedMembers' 
+      });
+    }
+  }
+
+  User.init({
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
@@ -49,24 +95,14 @@ module.exports = (sequelize, DataTypes) => {
       field: 'last_login_at'
     }
   }, {
+    sequelize,
+    modelName: 'User',
     tableName: 'users',
     underscored: true,
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at'
   });
-
-  User.associate = function(models) {
-    User.hasMany(models.Project, { foreignKey: 'ownerId', as: 'ownedProjects' });
-    User.hasMany(models.ProjectMember, { foreignKey: 'userId', as: 'projectMemberships' });
-    User.hasMany(models.Task, { foreignKey: 'assigneeId', as: 'assignedTasks' });
-    User.hasMany(models.Task, { foreignKey: 'createdBy', as: 'createdTasks' });
-    User.hasMany(models.TaskComment, { foreignKey: 'authorId', as: 'comments' });
-    User.hasMany(models.Notification, { foreignKey: 'userId', as: 'notifications' });
-    User.hasMany(models.PasswordReset, { foreignKey: 'userId', as: 'passwordResets' });
-    User.hasMany(models.ActivityLog, { foreignKey: 'userId', as: 'activities' });
-    User.hasMany(models.ProjectMember, { foreignKey: 'invitedBy', as: 'invitedMembers' });
-  };
 
   return User;
 };

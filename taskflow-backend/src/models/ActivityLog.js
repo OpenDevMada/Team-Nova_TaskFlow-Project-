@@ -1,5 +1,22 @@
+'use strict';
+
+const { Model } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
-  const ActivityLog = sequelize.define('ActivityLog', {
+  class ActivityLog extends Model {
+    static associate(models) {
+      ActivityLog.belongsTo(models.Project, { 
+        foreignKey: 'projectId', 
+        as: 'project' 
+      });
+      ActivityLog.belongsTo(models.User, { 
+        foreignKey: 'userId', 
+        as: 'user' 
+      });
+    }
+  }
+
+  ActivityLog.init({
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
@@ -26,19 +43,34 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TEXT,
       allowNull: true,
       field: 'user_agent'
+    },
+    projectId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'project_id',
+      references: {
+        model: 'projects',
+        key: 'id'
+      }
+    },
+    userId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'user_id',
+      references: {
+        model: 'users',
+        key: 'id'
+      }
     }
   }, {
+    sequelize,
+    modelName: 'ActivityLog',
     tableName: 'activity_logs',
     underscored: true,
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: false
   });
-
-  ActivityLog.associate = function(models) {
-    ActivityLog.belongsTo(models.Project, { foreignKey: 'projectId', as: 'project' });
-    ActivityLog.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
-  };
 
   return ActivityLog;
 };
