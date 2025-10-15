@@ -72,7 +72,7 @@ const syncDatabase = async () => {
         // 2. Synchronisation des modèles
         if (process.env.NODE_ENV === 'development') {
             await sequelize.sync({ 
-                force: true, // recrée les tables
+                force: false, // recrée les tables
                 alter: false  // modifie juste la structure
             });
             console.log('Base de données synchronisée.');
