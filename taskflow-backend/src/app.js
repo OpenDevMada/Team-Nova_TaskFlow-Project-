@@ -37,6 +37,7 @@ app.get('/health', (req, res) => {
     });
 });
 
+// Documentation API
 app.get('/docs', (req, res) => {
   res.json({
     message: 'TaskFlow API Documentation',
@@ -45,7 +46,15 @@ app.get('/docs', (req, res) => {
   });
 });
 
-// Routes API
+// =============================================
+// ROUTES API
+// =============================================
+
+// Authentification et gestion des utilisateurs
+app.use('/api/auth', require('./routes/authRoutes'));
+
+
+
 
 // Gestion des routes non trouvées
 app.use(notFoundHandler);
@@ -63,7 +72,8 @@ const syncDatabase = async () => {
         // 2. Synchronisation des modèles
         if (process.env.NODE_ENV === 'development') {
             await sequelize.sync({ 
-                alter: true  // modifie juste la structure
+                force: true, // recrée les tables
+                alter: false  // modifie juste la structure
             });
             console.log('Base de données synchronisée.');
         }
