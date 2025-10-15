@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit');
 const { sequelize, TaskStatus, PriorityLevel } = require('./models/index');
 const apiDocs = require('./config/docs');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const { swaggerUi, swaggerSpec } = require('./config/swagger'); 
 
 const app = express();
 
@@ -45,6 +46,9 @@ app.get('/docs', (req, res) => {
     endpoints: apiDocs.endpoints
   });
 });
+
+// Route de l'exposition d'api sur swagger
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // =============================================
 // ROUTES API
