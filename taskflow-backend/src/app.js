@@ -53,6 +53,9 @@ app.get('/docs', (req, res) => {
 // Authentification et gestion des utilisateurs
 app.use('/api/auth', require('./routes/authRoutes'));
 
+// Route des gestions de project
+app.use('/api/projects', require('./routes/projectRoutes'));
+
 
 
 
@@ -72,7 +75,7 @@ const syncDatabase = async () => {
         // 2. Synchronisation des modèles
         if (process.env.NODE_ENV === 'development') {
             await sequelize.sync({ 
-                force: true, // recrée les tables
+                force: false, // recrée les tables (a mettre en true pour recréé les tables)
                 alter: false  // modifie juste la structure
             });
             console.log('Base de données synchronisée.');
