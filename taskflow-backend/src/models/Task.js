@@ -72,58 +72,34 @@ module.exports = (sequelize, DataTypes) => {
     listId: {
       type: DataTypes.UUID,
       allowNull: false,
-      field: 'list_id',
-      references: {
-        model: 'task_lists',
-        key: 'id'
-      }
+      field: 'list_id'
     },
     projectId: {
       type: DataTypes.UUID,
       allowNull: false,
-      field: 'project_id',
-      references: {
-        model: 'projects',
-        key: 'id'
-      }
+      field: 'project_id'
     },
     statusId: {
       type: DataTypes.SMALLINT,
       allowNull: false,
       field: 'status_id',
-      references: {
-        model: 'task_statuses',
-        key: 'id'
-      },
       defaultValue: 1
     },
     priorityId: {
       type: DataTypes.SMALLINT,
       allowNull: false,
       field: 'priority_id',
-      references: {
-        model: 'priority_levels',
-        key: 'id'
-      },
       defaultValue: 2
     },
     assigneeId: {
       type: DataTypes.UUID,
       allowNull: true,
-      field: 'assignee_id',
-      references: {
-        model: 'users',
-        key: 'id'
-      }
+      field: 'assignee_id'
     },
     createdBy: {
       type: DataTypes.UUID,
       allowNull: false,
-      field: 'created_by',
-      references: {
-        model: 'users',
-        key: 'id'
-      }
+      field: 'created_by'
     }
   }, {
     sequelize,

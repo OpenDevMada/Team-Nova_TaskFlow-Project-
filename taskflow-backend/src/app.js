@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit');
 const { sequelize, TaskStatus, PriorityLevel } = require('./models/index');
 const apiDocs = require('./config/docs');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const { swaggerUi, swaggerSpec } = require('./config/swagger'); 
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.get('/health', (req, res) => {
     });
 });
 
+// Documentation API
 app.get('/docs', (req, res) => {
   res.json({
     message: 'TaskFlow API Documentation',
@@ -45,7 +47,21 @@ app.get('/docs', (req, res) => {
   });
 });
 
-// Routes API
+// Route de l'exposition d'api sur swagger
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// =============================================
+// ROUTES API
+// =============================================
+
+// Authentification et gestion des utilisateurs
+app.use('/api/auth', require('./routes/authRoutes'));
+
+// Route des gestions de project
+app.use('/api/projects', require('./routes/projectRoutes'));
+
+
+
 
 // Gestion des routes non trouvées
 app.use(notFoundHandler);
@@ -63,7 +79,8 @@ const syncDatabase = async () => {
         // 2. Synchronisation des modèles
         if (process.env.NODE_ENV === 'development') {
             await sequelize.sync({ 
-                alter: true  // modifie juste la structure
+                force: false, // recrée les tables (a mettre en true pour recréé les tables)
+                alter: false  // modifie juste la structure
             });
             console.log('Base de données synchronisée.');
         }
