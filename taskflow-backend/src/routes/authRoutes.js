@@ -156,6 +156,18 @@ router.post('/forgot-password', validateForgotPassword, AuthController.forgotPas
 
 /**
  * @swagger
+ * /auth/refresh-token:
+ *   post:
+ *     summary: Rafraîchir le token d'authentification
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Nouveau token généré
+ */
+router.post('/refresh-token', AuthController.refreshToken);
+
+/**
+ * @swagger
  * /auth/reset-password:
  *   post:
  *     summary: Réinitialiser le mot de passe
@@ -236,5 +248,33 @@ router.put('/profile', authenticate, validateUpdateProfile, AuthController.updat
  *         description: Mot de passe mis à jour
  */
 router.put('/change-password', authenticate, validateChangePassword, AuthController.changePassword);
+
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Déconnexion de la session actuelle
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Déconnexion réussie
+ */
+router.post('/logout', authenticate, AuthController.logout);
+
+/**
+ * @swagger
+ * /auth/logout-all:
+ *   post:
+ *     summary: Déconnexion de toutes les sessions actives
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Toutes les sessions ont été déconnectées
+ */
+router.post('/logout-all', authenticate, AuthController.logoutAll);
 
 module.exports = router;

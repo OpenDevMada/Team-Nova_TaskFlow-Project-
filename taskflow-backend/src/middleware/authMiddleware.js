@@ -1,8 +1,13 @@
-const { verifyToken } = require('../utils/jwtUtils');
+const { verifyAccessToken  } = require('../utils/jwtUtils');
 const { User } = require('../models');
 const { AppError } = require('./errorHandler');
 
-// Middleware d'authentification
+/**
+ * Middleware d'authentification
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
 const authenticate = async (req, res, next) => {
     try {
         // Récupérer le token du header Authorization
@@ -11,14 +16,14 @@ const authenticate = async (req, res, next) => {
             throw new AppError('Token d\'authentification manquant', 401);
         }
 
-        const token = authHeader.substring(7); // Enlever "Bearer "
+        const accessToken = authHeader.substring(7);
 
         // Vérifier le token
-        const decoded = verifyToken(token);
+        const decoded = verifyAccessToken(accessToken);
 
         // Vérifier que l'utilisateur existe toujours
         const user = await User.findByPk(decoded.userId, {
-            attributes: { exclude: ['passwordHash'] }
+            attributes: { exclude: ['passwordHash', 'refreshToken'] }
         });
 
         if (!user || !user.isActive) {
@@ -37,6 +42,28 @@ const authenticate = async (req, res, next) => {
             next(error);
         }
     }
+};
+
+// Middleware optionnel pour rafraîchir le token
+const optionalAuthenticate = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const accessToken = authHeader.substring(7);
+      const decoded = verifyAccessToken(accessToken);
+      const user = await User.findByPk(decoded.userId, {
+        attributes: { exclude: ['passwordHash', 'refreshToken'] }
+      });
+
+      if (user && user.isActive) {
+        req.user = user;
+      }
+    }
+    next();
+  } catch (error) {
+    // Continuer sans utilisateur si l'authentification échoue
+    next();
+  }
 };
 
 // Middleware d'autorisation (vérifier les rôles)
@@ -81,5 +108,6 @@ const checkOwnership = (modelName, paramName = 'id') => {
 module.exports = {
     authenticate,
     authorize,
+    optionalAuthenticate,
     checkOwnership
 };

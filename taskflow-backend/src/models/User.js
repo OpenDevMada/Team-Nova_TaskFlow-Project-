@@ -93,6 +93,11 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DATE,
       allowNull: true,
       field: 'last_login_at'
+    },
+    refreshToken: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: 'refresh_token'
     }
   }, {
     sequelize,
