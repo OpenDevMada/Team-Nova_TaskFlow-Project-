@@ -56,10 +56,6 @@ const { authenticate } = require('../middleware/authMiddleware');
  *         color:
  *           type: string
  *           example: "#33C1FF"
- *         ownerId:
- *           type: string
- *           format: uuid
- *           example: "9b09e6d0-7a12-4ef8-9a25-5e5cc7fca0dc"
  */
 
 /**
