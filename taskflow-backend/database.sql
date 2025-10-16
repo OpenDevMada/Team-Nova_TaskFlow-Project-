@@ -1,6 +1,7 @@
-## Conception Base de Données TaskFlow
-
+--- Conception Base de Données TaskFlow
+/* ==================================
 1. Table users (Utilisateurs)
+*/
 
 id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
 email           VARCHAR(255) UNIQUE NOT NULL
@@ -18,7 +19,9 @@ updated_at      TIMESTAMP DEFAULT NOW()
 INDEX idx_users_email_active (email, is_active)
 INDEX idx_users_role_active (role_global, is_active)
 
+/* ==================================
 2. Table projects (Projets)
+*/ 
 
 id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
 owner_id        UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE
@@ -33,7 +36,9 @@ updated_at      TIMESTAMP DEFAULT NOW()
 INDEX idx_projects_owner (owner_id)
 INDEX idx_projects_archived (is_archived)
 
+/* ==================================
 3. Table project_members (Membres des projets)
+*/ 
 
 id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
 project_id      UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE
@@ -51,7 +56,9 @@ INDEX idx_project_members_project (project_id)
 INDEX idx_project_members_user (user_id)
 INDEX idx_project_members_role (role)
 
+/* ==================================
 4. Table task_statuses (Référence des statuts)
+*/ 
 
 id              SMALLINT PRIMARY KEY
 name            VARCHAR(50) NOT NULL UNIQUE
@@ -65,7 +72,9 @@ INSERT INTO task_statuses VALUES
 (2, 'in_progress', 'En cours', '#4ECDC4', 2),
 (3, 'done', 'Terminé', '#45B7D1', 3);
 
+/* ==================================
 5. Table priority_levels (Référence des priorités)
+*/ 
 
 id              SMALLINT PRIMARY KEY  
 name            VARCHAR(50) NOT NULL UNIQUE
@@ -78,7 +87,9 @@ INSERT INTO priority_levels VALUES
 (2, 'medium', 2, '#FCE38A'), 
 (3, 'high', 3, '#F38181');
 
+/* ==================================
 6. Table task_lists (Colonnes/Listes)
+*/
 
 id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
 project_id      UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE
@@ -94,7 +105,9 @@ INDEX idx_task_lists_position (position)
 
 -- Données par défaut créées automatiquement pour chaque nouveau projet
 
+/* ==================================
 7. Table tasks (Tâches)
+*/ 
 
 id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
 list_id         UUID NOT NULL REFERENCES task_lists(id) ON DELETE CASCADE
@@ -122,7 +135,9 @@ INDEX idx_tasks_due_date (due_date)
 INDEX idx_tasks_position (position)
 INDEX idx_tasks_created_by (created_by)
 
+/* ==================================
 8. Table task_comments (Commentaires)
+*/ 
 
 id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
 task_id         UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE
@@ -136,7 +151,9 @@ INDEX idx_task_comments_task (task_id)
 INDEX idx_task_comments_author (author_id)
 INDEX idx_task_comments_created (created_at)
 
+/* ==================================
 9.  Table notifications (Notifications)
+*/ 
 
 id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
 user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE
@@ -158,7 +175,9 @@ INDEX idx_notifications_read (is_read)
 INDEX idx_notifications_created (created_at)
 INDEX idx_notifications_type (type)
 
+/* ==================================
 10. Table password_resets (Réinitialisation MDP)
+*/ 
 
 id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
 user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE
@@ -172,7 +191,9 @@ INDEX idx_password_resets_token (token)
 INDEX idx_password_resets_user (user_id)
 INDEX idx_password_resets_expires (expires_at)
 
+/* ==================================
 11. Table activity_logs (Journal d'activité)
+*/ 
 
 id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
 project_id      UUID NULL REFERENCES projects(id) ON DELETE SET NULL
@@ -191,10 +212,13 @@ INDEX idx_activity_logs_action (action)
 INDEX idx_activity_logs_created (created_at)
 
 
+/* ==================================
+Scénarios d'Usage Optimisés
+*/ 
 
-🚀 Scénarios d'Usage Optimisés
-
+/* ==================================
 1. Dashboard Principal
+*/ 
 
 -- Progression par projet
 SELECT 
@@ -210,7 +234,9 @@ LEFT JOIN task_statuses ts ON t.status_id = ts.id
 WHERE p.is_archived = false
 GROUP BY p.id, p.name, p.color;
 
+/* ==================================
 2. Tâches Assignées à un Utilisateur
+*/ 
 
 -- Avec toutes les informations nécessaires
 SELECT 
@@ -231,7 +257,9 @@ WHERE t.assignee_id = $1
 AND p.is_archived = false
 ORDER BY t.due_date NULLS LAST, pl.weight DESC, t.position;
 
+/* ==================================
 3. Notifications Non Lus
+*/ 
 
 -- Avec pagination
 SELECT 
@@ -246,7 +274,9 @@ AND n.is_read = false
 ORDER BY n.created_at DESC
 LIMIT 50;
 
+/* ==================================
 4. Index pour Performance
+*/ 
 
 -- Index composites pour les requêtes fréquentes
 CREATE INDEX CONCURRENTLY idx_tasks_project_status ON tasks(project_id, status_id);
