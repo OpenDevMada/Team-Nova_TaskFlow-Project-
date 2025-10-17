@@ -6,10 +6,21 @@ class AuthController {
     static register = asyncHandler(async (req, res) => {
         const result = await AuthService.register(req.body);
 
+        // Set refresh token in httpOnly cookie
+        res.cookie('refreshToken', result.refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
         res.status(201).json({
             success: true,
             message: 'Utilisateur créé avec succès',
-            data: result
+            data: {
+                user: result.user,
+                accessToken: result.accessToken
+            }
         });
     });
 
@@ -18,10 +29,71 @@ class AuthController {
         const { email, password } = req.body;
         const result = await AuthService.login(email, password);
 
+        // Set refresh token in httpOnly cookie
+        res.cookie('refreshToken', result.refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
         res.json({
             success: true,
             message: 'Connexion réussie',
-            data: result
+            data: {
+                user: result.user,
+                accessToken: result.accessToken
+            }
+        });
+    });
+
+    // Rafraîchir le token
+    static refreshToken = asyncHandler(async (req, res) => {
+        const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
+
+        const result = await AuthService.refreshToken(refreshToken);
+
+        // Set nouveau refresh token in httpOnly cookie
+        res.cookie('refreshToken', result.refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
+        res.json({
+            success: true,
+            message: 'Token rafraîchi avec succès',
+            data: {
+                user: result.user,
+                accessToken: result.accessToken
+            }
+        });
+    });
+
+    // Déconnexion
+    static logout = asyncHandler(async (req, res) => {
+        await AuthService.logout(req.user.id);
+
+        // Clear refresh token cookie
+        res.clearCookie('refreshToken');
+
+        res.json({
+            success: true,
+            message: 'Déconnexion réussie'
+        });
+    });
+
+    // Déconnexion de tous les appareils
+    static logoutAll = asyncHandler(async (req, res) => {
+        await AuthService.logoutAllDevices(req.user.id);
+
+        // Clear refresh token cookie
+        res.clearCookie('refreshToken');
+
+        res.json({
+            success: true,
+            message: 'Déconnexion de tous les appareils réussie'
         });
     });
 
@@ -65,7 +137,7 @@ class AuthController {
         res.json({
             success: true,
             message: result.message,
-            ...(result.resetToken && { resetToken: result.resetToken }) // Uniquement en dev
+            ...(result.resetToken && { resetToken: result.resetToken })
         });
     });
 

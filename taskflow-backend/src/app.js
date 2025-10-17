@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
 const { sequelize, TaskStatus, PriorityLevel } = require('./models/index');
 const apiDocs = require('./config/docs');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
@@ -16,11 +17,12 @@ app.use(cors({
     origin: process.env.CLIENT_URL || 'http://localhost:5173',
     credentials: true
 }));
+app.use(cookieParser());
 
 // Limiteur de requêtes
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100 // limite chaque IP à 100 requêtes par windowMs
+    max: 100
 });
 app.use(limiter);
 
@@ -82,7 +84,7 @@ const syncDatabase = async () => {
         // 2. Synchronisation des modèles
         if (process.env.NODE_ENV === 'development') {
             await sequelize.sync({ 
-                force: false, // recrée les tables (a mettre en true pour recréé les tables)
+                force: false, // recrée les tables
                 alter: false  // modifie juste la structure
             });
             console.log('Base de données synchronisée.');
