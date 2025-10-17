@@ -1,5 +1,5 @@
-const { Project, User, ProjectMember, Task, TaskList, ActivityLog } = require('../models');
-const { hasAccess } = require('../utils/roleHierarchy');
+const { Project, User, ProjectMember, Task, TaskList, ActivityLog } = require('../../models');
+const { hasAccess } = require('../../utils/roleHierarchy');
 
 class ProjectService {
   

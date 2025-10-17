@@ -1,5 +1,5 @@
-const { asyncHandler } = require('../middleware/errorHandler');
-const ProjectService = require('../services/projectService');
+const { asyncHandler } = require('../../middleware/errorHandler');
+const ProjectService = require('../../services/projects/projectService');
 
 class ProjectController
 {
