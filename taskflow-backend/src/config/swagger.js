@@ -1,6 +1,9 @@
 // src/config/swagger.js
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 const options = {
   definition: {
@@ -26,7 +29,7 @@ const options = {
       { bearerAuth: [] }
     ],
   },
-  apis: ['./src/routes/*.js'], 
+  apis: ['./src/routes/*.js','./src/routes/*/*.js'], 
 };
 
 const swaggerSpec = swaggerJsdoc(options);
