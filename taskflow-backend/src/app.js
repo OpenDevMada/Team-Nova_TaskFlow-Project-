@@ -60,7 +60,10 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/auth', require('./routes/authRoutes'));
 
 // Route des gestions de project
-app.use('/api/projects', require('./routes/projectRoutes'));
+app.use('/api/projects', require('./routes/projects/projectRoutes'));
+
+// Route d'affectation des projets aux membres'
+app.use('/api/projects-member', require('./routes/projects/projectMemberRoutes'));
 
 
 
