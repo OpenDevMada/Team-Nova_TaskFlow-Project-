@@ -22,6 +22,17 @@ class ProjectMemberService
         {
             throw new Error('Membre a assigné au projet non trouvé');
         }
+
+        const existingAssignment = await ProjectMember.findOne({
+            where: {
+                projectId: data.projectId,
+                userId: data.userId
+            }
+        });
+
+        if (existingAssignment) {
+            throw new Error('Ce membre est déjà assigné à ce projet');
+        }
     
         const projectMember = await ProjectMember.create({
           projectId: project.id,
