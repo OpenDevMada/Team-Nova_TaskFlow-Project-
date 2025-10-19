@@ -18,6 +18,22 @@ module.exports = (sequelize, DataTypes) => {
         as: 'tasks'
       });
     }
+
+    // Méthode utilitaire pour récupérer avec les tâches triées
+    static async getListWithTasks(listId) {
+      return await TaskList.findByPk(listId, {
+        include: [{
+          model: Task,
+          as: 'tasks',
+          include: [
+            { model: User, as: 'assignee', attributes: ['id', 'firstName', 'lastName', 'avatarUrl'] },
+            { model: TaskStatus, as: 'status' },
+            { model: PriorityLevel, as: 'priority' }
+          ],
+          order: [['position', 'ASC']]
+        }]
+      });
+    }
   }
 
   TaskList.init({
