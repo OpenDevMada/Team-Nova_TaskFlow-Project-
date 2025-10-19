@@ -65,7 +65,8 @@ app.use('/api/projects', require('./routes/projects/projectRoutes'));
 // Route d'affectation des projets aux membres'
 app.use('/api/projects-member', require('./routes/projects/projectMemberRoutes'));
 
-
+app.use('/api/task-lists', require('./routes/tasks/taskListRoutes'));
+app.use('/api/tasks', require('./routes/tasks/taskRoutes'));
 
 
 // Gestion des routes non trouvées
