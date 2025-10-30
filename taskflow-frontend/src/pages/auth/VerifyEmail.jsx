@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Mail, CheckCircle2, XCircle } from "lucide-react"
-import Link from "next/link"
+import { Link, Navigate, useNavigate } from "react-router-dom"
 
 export default function VerifyEmail() {
     const isVerified = true
