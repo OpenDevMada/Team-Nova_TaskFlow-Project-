@@ -2,17 +2,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 
-interface KanbanCardProps {
-    title: string
-    priority: "high" | "medium" | "low"
-    assignee: {
-        name: string
-        avatar: string
-    }
-    labels: string[]
-}
-
-export function KanbanCard({ title, priority, assignee, labels }: KanbanCardProps) {
+export function KanbanCard({ title, priority, assignee, labels }) {
     const priorityColors = {
         high: "bg-destructive text-destructive-foreground",
         medium: "bg-chart-2 text-accent-foreground",

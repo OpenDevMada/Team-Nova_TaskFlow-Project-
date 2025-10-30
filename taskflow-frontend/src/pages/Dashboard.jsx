@@ -1,5 +1,5 @@
-import { Sidebar } from "@/components/sidebar"
-import { Header } from "@/components/header"
+import { Sidebar } from "@/components/layout/Sidebar"
+import { Header } from "@/components/layout/Header"
 import { ProjectCard } from "@/components/project-card"
 import { TaskCard } from "@/components/task-card"
 import { StatsCard } from "@/components/stats-card"
