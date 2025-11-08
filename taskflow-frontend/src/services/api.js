@@ -1,74 +1,37 @@
-import { API_BASE_URL } from '../utils/constants';
+import axios from 'axios'
+import { API_BASE_URL } from '../utils/constants'
 
-class ApiService {
-    constructor() {
-        this.baseURL = API_BASE_URL;
+// Création d’une instance axios
+const api = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+        'Content-Type': 'application/json',
+    },
+})
+
+// Intercepteur pour ajouter le token
+api.interceptors.request.use((config) => {
+    const token = localStorage.getItem('authToken')
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`
     }
+    return config
+})
 
-    // Méthode générique pour les requêtes HTTP
-    async request(endpoint, options = {}) {
-        const url = `${this.baseURL}${endpoint}`;
-
-        const config = {
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers,
-            },
-            ...options,
-        };
-
-        // Ajout du token d'authentification si disponible
-        const token = localStorage.getItem('authToken');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-
-        try {
-            const response = await fetch(url, config);
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            console.error('API request failed:', error);
-            throw error;
-        }
+// Intercepteur pour gérer les erreurs globalement
+api.interceptors.response.use(
+    (response) => response.data,
+    (error) => {
+        console.error('API error:', error)
+        throw error
     }
+)
 
-    // Méthodes HTTP simplifiées
-    get(endpoint) {
-        return this.request(endpoint);
-    }
-
-    post(endpoint, data) {
-        return this.request(endpoint, {
-            method: 'POST',
-            body: JSON.stringify(data),
-        });
-    }
-
-    put(endpoint, data) {
-        return this.request(endpoint, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-        });
-    }
-
-    patch(endpoint, data) {
-        return this.request(endpoint, {
-            method: 'PATCH',
-            body: JSON.stringify(data),
-        });
-    }
-
-    delete(endpoint) {
-        return this.request(endpoint, {
-            method: 'DELETE',
-        });
-    }
+// Service générique
+export const apiService = {
+    get: (endpoint, config = {}) => api.get(endpoint, config),
+    post: (endpoint, data, config = {}) => api.post(endpoint, data, config),
+    put: (endpoint, data, config = {}) => api.put(endpoint, data, config),
+    patch: (endpoint, data, config = {}) => api.patch(endpoint, data, config),
+    delete: (endpoint, config = {}) => api.delete(endpoint, config),
 }
-
-export const apiService = new ApiService();

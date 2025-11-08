@@ -1,4 +1,4 @@
-export const API_BASE_URL = process.env.BASE_URL || 'http://localhost:5000/api';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export const ROLES = {
     ADMIN: 'admin',
@@ -6,13 +6,22 @@ export const ROLES = {
     VIEWER: 'viewer'
 };
 
+export const PERMISSIONS = {
+  ALL: "all",
+  MANAGE_CLIENTS: "manage_clients",
+  MANAGE_PAYROLL: "manage_payroll",
+  MANAGE_EMPLOYEES: "manage_employees",
+  VIEW_REPORTS: "view_reports",
+}
+
 export const ROUTES = {
     HOME: "/",
-    LOGIN: "/auth/login",
-    PROFILE: "/auth/profile",
-    FORGOT_PASSWORD: '/auth/forgot-password',
-    RESET_PASSWORD: '/auth/reset-password',
-    ADMIN: "/admin",
+    LOGIN: "/login",
+    REGISTER: "/register",
+    PROFILE: "/profile",
+    FORGOT_PASSWORD: '/forgot-password',
+    RESET_PASSWORD: '/reset-password',
+    DASHBOARD: "/dashboard",
     CABINET: "/cabinet",
     CLIENT: "/client",
     UNAUTHORIZED: "/unauthorized",
@@ -64,6 +73,14 @@ export const TASK_LIST_ENDPOINTS = {
 
 export const NAVIGATION_ITEMS = {
     [ROLES.ADMIN]: [
+        { name: "Dashboard", path: "/admin" },
+        { name: "Gestionnaires", path: "/admin/managers" },
+    ],
+    [ROLES.MEMBER]: [
+        { name: "Dashboard", path: "/membre" },
+        { name: "Listes", path: "/membre/listes" },
+    ],
+    [ROLES.VIEWER]: [
         { name: "Dashboard", path: "/admin" },
         { name: "Gestionnaires", path: "/admin/managers" },
     ],

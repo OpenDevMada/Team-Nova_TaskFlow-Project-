@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useTasks } from '../hooks/useTasks';
+import { useTasks } from '@/hooks/useTasks';
 
 const TaskManager = ({ projectId }) => {
     const {

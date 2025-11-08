@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { authService } from '@/services/authService';
+import { Link, useNavigate } from 'react-router-dom';
+import { ROUTES } from "@/utils/constants"
+import { useAuth } from "@/hooks/useAuth";
 
 const Login = () => {
+    const { login } = useAuth();
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -24,9 +27,10 @@ const Login = () => {
         setError('');
 
         try {
-            const response = await authService.login(formData);
-            // Gérer la redirection ou le stockage du token
-            console.log('Login successful:', response);
+            const response = await login(formData);
+            console.log("Login réussi", response);
+
+            navigate(ROUTES.DASHBOARD);
         } catch (err) {
             setError(err.message || 'Erreur lors de la connexion');
         } finally {
@@ -140,7 +144,7 @@ const Login = () => {
                             <p className="text-gray-600">
                                 Pas encore de compte ?{' '}
                                 <Link
-                                    to="/register"
+                                    to={ROUTES.REGISTER}
                                     className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
                                 >
                                     S'inscrire

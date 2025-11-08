@@ -2,7 +2,7 @@ import { useState } from "react"
 import { useAuth } from "@/hooks/useAuth"
 import Footer from "./Footer"
 import Header from "./Header"
-import Sidebar from "./Sidebar"
+import { Sidebar } from "./Sidebar"
 
 const Layout = ({ children, userRole }) => {
   const { user } = useAuth()

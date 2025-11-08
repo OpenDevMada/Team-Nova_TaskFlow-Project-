@@ -44,6 +44,12 @@ export const useAuth = () => {
         return response;
     };
 
+    const hasAnyRole = (roles) =>
+        user && roles.some((role) => user.role === role)
+
+    const hasPermission = (perm) =>
+        user && user.permissions?.includes(perm)
+
     return {
         user,
         loading,
@@ -51,5 +57,7 @@ export const useAuth = () => {
         logout,
         register,
         isAuthenticated: !!user,
+        hasAnyRole,
+        hasPermission,
     };
 };

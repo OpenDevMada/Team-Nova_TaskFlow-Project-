@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Search, Settings, Bell, User, LogOut, ChevronDown } from 'lucide-react';
 
-export function Header() {
+const Header = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
 
@@ -99,3 +99,5 @@ export function Header() {
         </header>
     );
 }
+
+export default Header
