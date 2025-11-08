@@ -1,13 +1,13 @@
 import { Routes, Route } from "react-router-dom"
 import Layout from "../Layout/Layout"
-import AdminDashboard from "@/components/tasks/TaskManager"
+import Dashboard from "../Dashboard"
 
 const Index = () => {
   return (
     <Layout userRole="admin">
       <Routes>
-        <Route path="/" element={<AdminDashboard />} />
-        <Route path="/dashboard" element={<AdminDashboard />} />
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         {/* <Route path="/tasks" element={<Tasks />} />
         <Route path="/projects" element={<Projects />} /> */}
       </Routes>
