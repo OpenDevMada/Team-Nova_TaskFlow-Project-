@@ -62,6 +62,15 @@ const App = () => {
           }
         />
 
+        <Route
+          path={ROUTES.PROJECTS}
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Admin Routes */}
         <Route
           path="/admin/*"
