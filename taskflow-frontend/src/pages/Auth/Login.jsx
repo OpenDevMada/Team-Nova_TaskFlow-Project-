@@ -28,11 +28,15 @@ const Login = () => {
 
         try {
             const response = await login(formData);
-            console.log("Login réussi", response);
+            console.log("Login réussi - Response complète:", response);
+            console.log("Access Token:", response.accessToken);
+            console.log("User:", response.user);
 
             navigate(ROUTES.DASHBOARD);
         } catch (err) {
-            setError(err.message || 'Erreur lors de la connexion');
+            console.error("Erreur détaillée:", err);
+            console.error("Response error:", err.response);
+            setError(err.response?.data?.message || err.message || 'Erreur lors de la connexion');
         } finally {
             setLoading(false);
         }
