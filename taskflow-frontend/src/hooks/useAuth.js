@@ -14,7 +14,8 @@ export const useAuth = () => {
             const token = localStorage.getItem('authToken');
             if (token) {
                 const profile = await authService.getProfile();
-                setUser(profile);
+                console.log('Profile in checkAuth:', profile); // Debug
+                setUser(profile.data || profile);
             }
         } catch (error) {
             console.error('Auth check failed:', error);
@@ -26,7 +27,7 @@ export const useAuth = () => {
 
     const login = async (credentials) => {
         const response = await authService.login(credentials);
-        localStorage.setItem('authToken', response.token);
+        localStorage.setItem('authToken', response.accessToken);
         setUser(response.user);
         return response;
     };
@@ -39,8 +40,24 @@ export const useAuth = () => {
 
     const register = async (userData) => {
         const response = await authService.register(userData);
-        localStorage.setItem('authToken', response.token);
+        localStorage.setItem('authToken', response.accessToken);
         setUser(response.user);
+        return response;
+    };
+
+    const updateProfile = async (profileData) => {
+        const response = await authService.updateProfile(profileData);
+        setUser(response.data || response);
+        return response;
+    };
+
+    const changePassword = async (passwordData) => {
+        return await authService.changePassword(passwordData);
+    };
+
+    const refreshToken = async () => {
+        const response = await authService.refreshToken();
+        localStorage.setItem('authToken', response.accessToken);
         return response;
     };
 
@@ -56,6 +73,9 @@ export const useAuth = () => {
         login,
         logout,
         register,
+        updateProfile,
+        changePassword,
+        refreshToken,
         isAuthenticated: !!user,
         hasAnyRole,
         hasPermission,

@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { API_BASE_URL } from '../utils/constants'
+import { API_BASE_URL, AUTH_ENDPOINTS } from '../utils/constants'
 
 // Création d’une instance axios
 const api = axios.create({
@@ -7,6 +7,7 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
+    withCredentials: true,
 })
 
 // Intercepteur pour ajouter le token
@@ -18,14 +19,40 @@ api.interceptors.request.use((config) => {
     return config
 })
 
-// Intercepteur pour gérer les erreurs globalement
 api.interceptors.response.use(
-    (response) => response.data,
-    (error) => {
-        console.error('API error:', error)
-        throw error
+    (response) => {
+        return response;
+    },
+    async (error) => {
+
+        const originalRequest = error.config;
+
+        // Gestion du refresh token
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            originalRequest._retry = true;
+
+            try {
+                // Rafraîchir le token
+                const refreshResponse = await api.post(AUTH_ENDPOINTS.REFRESH_TOKEN);
+                const newAccessToken = refreshResponse.data.data.accessToken;
+
+                localStorage.setItem('authToken', newAccessToken);
+                originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
+                return api(originalRequest);
+            } catch (refreshError) {
+                localStorage.removeItem('authToken');
+                window.location.href = '/login';
+                return Promise.reject(refreshError);
+            }
+        }
+
+        // Pour les autres erreurs
+        console.error('API error:', error);
+        throw error;
     }
-)
+);
+
 
 // Service générique
 export const apiService = {
