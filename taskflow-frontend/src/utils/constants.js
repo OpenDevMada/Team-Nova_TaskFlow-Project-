@@ -22,8 +22,8 @@ export const ROUTES = {
     FORGOT_PASSWORD: '/forgot-password',
     RESET_PASSWORD: '/reset-password',
     DASHBOARD: "/dashboard",
-    CABINET: "/cabinet",
-    CLIENT: "/client",
+    PROJECTS: "/projects",
+    TASKS: "/tasks",
     UNAUTHORIZED: "/unauthorized",
     NOT_FOUND: "/404",
 }
