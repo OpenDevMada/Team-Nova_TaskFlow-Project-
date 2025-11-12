@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard,
     FolderKanban,
@@ -9,11 +9,16 @@ import {
     ChevronLeft,
     LogOut
 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { ROUTES } from '@/utils/constants';
 
 export function Sidebar() {
     const [collapsed, setCollapsed] = useState(false);
     const [activeTooltip, setActiveTooltip] = useState(null);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
     const location = useLocation();
+    const navigate = useNavigate();
+    const { user, logout } = useAuth();
 
     const navigation = [
         { name: "Dashboard", icon: LayoutDashboard, href: "/" },
@@ -25,6 +30,58 @@ export function Sidebar() {
     const isActive = (href) => {
         if (href === "/") return location.pathname === "/";
         return location.pathname.startsWith(href);
+    };
+
+    // Fonction pour les initiales de l'utilisateur
+    const getUserInitials = () => {
+        if (!user) return 'UK';
+        const { firstName, lastName } = user;
+        if (firstName && lastName) {
+            return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+        }
+        if (firstName) return firstName.charAt(0).toUpperCase();
+        if (lastName) return lastName.charAt(0).toUpperCase();
+        return user.email?.charAt(0).toUpperCase() || 'UK';
+    };
+
+    // Fonction pour le nom complet
+    const getFullName = () => {
+        if (!user) return 'Utilisateur';
+        const { firstName, lastName } = user;
+        if (firstName && lastName) return `${firstName} ${lastName}`;
+        return firstName || lastName || user.email || 'Utilisateur';
+    };
+
+    // Fonction pour le rôle
+    const getUserRole = () => {
+        if (!user) return 'Membre';
+        return user.roleGlobal === 'admin' ? 'Admin' :
+            user.roleGlobal === 'member' ? 'Membre' : 'Viewer';
+    };
+
+    // Fonction de déconnexion
+    const handleLogout = async () => {
+        if (isLoggingOut) return;
+
+        setIsLoggingOut(true);
+        setActiveTooltip(null);
+
+        try {
+            console.log('🚪 Déconnexion depuis la sidebar...');
+            await logout();
+            console.log('Déconnexion réussie');
+
+            // Redirection après déconnexion
+            window.location.replace(ROUTES.LOGIN);
+
+        } catch (error) {
+            console.error('Erreur lors de la déconnexion:', error);
+            // En cas d'erreur, forcer la déconnexion locale
+            localStorage.removeItem('authToken');
+            navigate(ROUTES.LOGIN, { replace: true });
+        } finally {
+            setIsLoggingOut(false);
+        }
     };
 
     return (
@@ -112,12 +169,16 @@ export function Sidebar() {
             <div className="border-t border-gray-200 p-3">
                 <div className={`flex items-center gap-3 ${collapsed ? "justify-center" : ""}`}>
                     <div className="h-9 w-9 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                        AK
+                        {getUserInitials()}
                     </div>
                     {!collapsed && (
                         <div className="flex-1 overflow-hidden">
-                            <p className="text-sm font-medium text-gray-900 truncate">Aryaman K.</p>
-                            <p className="text-xs text-gray-500 truncate">Admin</p>
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                                {getFullName()}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate">
+                                {getUserRole()}
+                            </p>
                         </div>
                     )}
                 </div>
@@ -125,19 +186,29 @@ export function Sidebar() {
                 {/* Bouton de déconnexion avec tooltip */}
                 <div className="relative mt-3">
                     <button
+                        onClick={handleLogout}
+                        disabled={isLoggingOut}
                         onMouseEnter={() => collapsed && setActiveTooltip('Déconnexion')}
                         onMouseLeave={() => collapsed && setActiveTooltip(null)}
-                        className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors ${collapsed ? "justify-center px-2" : "justify-start"
+                        className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${collapsed ? "justify-center px-2" : "justify-start"
                             }`}
                     >
-                        <LogOut className="h-4 w-4" />
-                        {!collapsed && <span>Déconnexion</span>}
+                        {isLoggingOut ? (
+                            <div className="h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                            <LogOut className="h-4 w-4" />
+                        )}
+                        {!collapsed && (
+                            <span>
+                                {isLoggingOut ? 'Déconnexion...' : 'Déconnexion'}
+                            </span>
+                        )}
                     </button>
 
                     {/* Tooltip pour la déconnexion */}
                     {collapsed && activeTooltip === 'Déconnexion' && (
                         <div className="absolute left-full top-1/2 transform -translate-y-1/2 ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg z-50 whitespace-nowrap">
-                            Déconnexion
+                            {isLoggingOut ? 'Déconnexion...' : 'Déconnexion'}
                             <div className="absolute right-full top-1/2 transform -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>
                         </div>
                     )}

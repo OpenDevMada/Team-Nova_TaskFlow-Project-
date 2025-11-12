@@ -32,7 +32,7 @@ const Login = () => {
             console.log("Access Token:", response.accessToken);
             console.log("User:", response.user);
 
-            navigate(ROUTES.DASHBOARD);
+            window.location.replace(ROUTES.DASHBOARD);
         } catch (err) {
             console.error("Erreur détaillée:", err);
             console.error("Response error:", err.response);

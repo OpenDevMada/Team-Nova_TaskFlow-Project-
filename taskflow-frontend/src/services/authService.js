@@ -21,10 +21,11 @@ export const authService = {
   login: async (credentials) => {
     const response = await apiService.post(AUTH_ENDPOINTS.LOGIN, credentials);
     console.log('Login response structure:', response);
+    const data = getResponseData(response);
 
     return {
-      user: response.data.data.user,
-      accessToken: response.data.data.accessToken
+      user: data.user,
+      accessToken: data.accessToken
     };
   },
 
@@ -41,10 +42,11 @@ export const authService = {
   refreshToken: async () => {
     const response = await apiService.post(AUTH_ENDPOINTS.REFRESH_TOKEN);
     console.log('Refresh token response:', response); // Debug
+    const data = getResponseData(response);
 
     return {
-      user: response.data.data.user,
-      accessToken: response.data.data.accessToken,
+      user: data.user,
+      accessToken: data.accessToken,
     };
   },
 

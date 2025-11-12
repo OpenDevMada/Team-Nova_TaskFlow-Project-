@@ -2,8 +2,8 @@ import { Card, CardContent } from "@/components/ui/Card"
 
 const StatsCard = ({ title, value, icon: Icon, trend, color }) => {
     return (
-        <Card className="p-4">
-            <CardContent>
+        <Card className="border-red-200 bg-red-50">
+            <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="text-sm text-gray-500">{title}</p>
