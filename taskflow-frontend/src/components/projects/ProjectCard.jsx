@@ -17,7 +17,7 @@ export default function ProjectCard({ title, description, progress, members, sta
     }
 
     return (
-        <Card className="group hover:shadow-lg transition-all duration-200 cursor-pointer">
+        <Card className="group hover:shadow-lg transition-all duration-200 cursor-pointer border-blue-200">
             <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                     <div className="h-1 w-12 rounded-full mb-3" style={{ backgroundColor: color }} />

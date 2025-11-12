@@ -10,29 +10,30 @@ const ProtectedRoute = ({
     requiredPermissions = [],
     redirectIfAuthenticated = false,
 }) => {
-    const { user, loading, hasAnyRole, hasPermission } = useAuth();
+    const { user, loading, isAuthenticated, hasAnyRole, hasPermission } = useAuth();
     const navigate = useNavigate();
-
-    useEffect(() => {
-        if (!loading) {
-            if (redirectIfAuthenticated && user) {
-                navigate(ROUTES.DASHBOARD, { replace: true });
-            }
-        }
-    }, [loading, user, redirectIfAuthenticated, navigate]);
 
     if (loading) return <Loader />;
 
-    if (!user && !redirectIfAuthenticated) {
+    // Redirection si l'utilisateur est authentifié et que la route est réservée aux non-connectés
+    if (redirectIfAuthenticated && isAuthenticated) {
+        return <Navigate to={ROUTES.DASHBOARD} replace />;
+    }
+
+    // Redirection si l'utilisateur n'est pas authentifié
+    if (!redirectIfAuthenticated && !isAuthenticated) {
         return <Navigate to={ROUTES.LOGIN} replace />;
     }
 
-    if (allowedRoles.length > 0 && !hasAnyRole(allowedRoles)) {
+    // Vérification des rôles si spécifiés
+    if (allowedRoles.length > 0 && user && !hasAnyRole(allowedRoles)) {
         return <Navigate to={ROUTES.UNAUTHORIZED} replace />;
     }
 
+    // Vérification des permissions si spécifiées
     if (
         requiredPermissions.length > 0 &&
+        user &&
         !requiredPermissions.every((permission) => hasPermission(permission))
     ) {
         return <Navigate to={ROUTES.UNAUTHORIZED} replace />;

@@ -27,12 +27,12 @@ const Header = () => {
         try {
             setIsDropdownOpen(false);
             await logout();
-            navigate(ROUTES.LOGIN);
+            window.location.replace(ROUTES.LOGIN);
         } catch (error) {
             console.error('Erreur lors de la déconnexion:', error);
             // En cas d'erreur, forcer la déconnexion locale
             localStorage.removeItem('authToken');
-            navigate(ROUTES.LOGIN);
+            window.location.replace(ROUTES.LOGIN);
         }
     };
 
