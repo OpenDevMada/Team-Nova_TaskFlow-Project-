@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { API_BASE_URL, AUTH_ENDPOINTS } from '../utils/constants'
+import { API_BASE_URL, API_ENDPOINTS } from '../utils/constants'
 
 // Création d’une instance axios
 const api = axios.create({
@@ -33,7 +33,7 @@ api.interceptors.response.use(
 
             try {
                 // Rafraîchir le token
-                const refreshResponse = await api.post(AUTH_ENDPOINTS.REFRESH_TOKEN);
+                const refreshResponse = await api.post(API_ENDPOINTS.AUTH.REFRESH_TOKEN);
                 const newAccessToken = refreshResponse.data.data.accessToken;
 
                 localStorage.setItem('authToken', newAccessToken);

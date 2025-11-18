@@ -8,8 +8,6 @@ const Index = () => {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        {/* <Route path="/tasks" element={<Tasks />} />
-        <Route path="/projects" element={<Projects />} /> */}
       </Routes>
     </Layout>
   )

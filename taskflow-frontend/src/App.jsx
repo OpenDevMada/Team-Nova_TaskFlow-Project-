@@ -8,6 +8,8 @@ import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/Dashboard";
 import NotFound from "./pages/common/NotFound";
 import Unauthorized from "./pages/common/Unauthorized";
+import Tasks from "./pages/Tasks/Tasks";
+import Projects from "./pages/Projects/Projects";
 
 const App = () => {
   return (
@@ -63,10 +65,19 @@ const App = () => {
         />
 
         <Route
+          path={ROUTES.TASKS}
+          element={
+            <ProtectedRoute>
+              <Tasks />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path={ROUTES.PROJECTS}
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <Projects />
             </ProtectedRoute>
           }
         />

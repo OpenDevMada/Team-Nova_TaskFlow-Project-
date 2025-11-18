@@ -14,7 +14,7 @@ class AuthService {
      * @returns {Promise<Object>} Utilisateur créé et tokens
      */
     static async register(userData) {
-        const { email, password, firstName, lastName } = userData;
+        const { email, password, firstName, lastName, roleGlobal } = userData;       
 
         // Vérifier si l'utilisateur existe déjà
         const existingUser = await User.findOne({ where: { email } });
@@ -22,9 +22,9 @@ class AuthService {
 
         const passwordHash = await bcrypt.hash(password, 12);
 
-        const user = await User.create({ email, passwordHash, firstName, lastName });
+        const user = await User.create({ email, passwordHash, firstName, lastName, roleGlobal });
         const tokens = await this.generateTokens(user);
-
+        
         return {
             user: this.getUserResponse(user),
             ...tokens
