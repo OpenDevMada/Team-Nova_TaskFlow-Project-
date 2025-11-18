@@ -1,9 +1,9 @@
 import { apiService } from './api';
-import { PROJECT_MEMBER_ENDPOINTS } from '../utils/constants';
+import { API_ENDPOINTS } from '../utils/constants';
 
 export const projectMemberService = {
-    addMember: (memberData) => apiService.post(PROJECT_MEMBER_ENDPOINTS.MEMBERS, memberData),
-    getMembers: () => apiService.get(PROJECT_MEMBER_ENDPOINTS.MEMBERS),
-    getMember: (id) => apiService.get(PROJECT_MEMBER_ENDPOINTS.MEMBER_BY_ID(id)),
-    removeMember: (id) => apiService.delete(PROJECT_MEMBER_ENDPOINTS.MEMBER_BY_ID(id)),
+    addMember: (memberData) => apiService.post(API_ENDPOINTS.PROJECT_MEMBER.BASE, memberData),
+    getMembers: () => apiService.get(API_ENDPOINTS.PROJECT_MEMBER.BASE),
+    getMember: (id) => apiService.get(API_ENDPOINTS.PROJECT_MEMBER.MEMBER_BY_ID(id)),
+    removeMember: (id) => apiService.delete(API_ENDPOINTS.PROJECT_MEMBER.MEMBER_BY_ID(id)),
 };

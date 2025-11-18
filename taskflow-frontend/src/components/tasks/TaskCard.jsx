@@ -1,10 +1,10 @@
 import { Card, CardContent } from "@/components/ui/Card"
-import { Avatar } from "@/components/ui/Avatar"
+import { Avatar } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/Badge"
 import { Calendar, MessageSquare } from "lucide-react"
 import { Link } from "react-router-dom"
 
-export default function TaskCard({ title, priority, dueDate, assignee, comments, project }) {
+const TaskCard = ({ title, priority, dueDate, assignee, comments, project }) => {
     const priorityColors = {
         high: "bg-red-100 text-red-800",
         medium: "bg-yellow-100 text-yellow-800",
@@ -59,3 +59,5 @@ export default function TaskCard({ title, priority, dueDate, assignee, comments,
         </Link>
     )
 }
+
+export default TaskCard
