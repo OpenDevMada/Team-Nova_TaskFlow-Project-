@@ -40,9 +40,10 @@ export default function ProjectCard({
   progress = 0,
   members = 0,
   status = "active",
-  color = "oklch(0.55 0.18 264)",
+  color = "#33C1FF",
   createdAt,
   onDelete,
+  onEdit,
   viewMode = "grid",
 }) {
   const navigate = useNavigate()
@@ -115,7 +116,7 @@ export default function ProjectCard({
                 <ExternalLink className="mr-2 h-4 w-4" />
                 Voir les détails
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleEdit}>
+              <DropdownMenuItem onClick={onEdit}>
                 <Edit className="mr-2 h-4 w-4" />
                 Modifier
               </DropdownMenuItem>

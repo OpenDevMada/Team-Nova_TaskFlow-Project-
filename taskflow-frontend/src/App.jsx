@@ -10,6 +10,7 @@ import NotFound from "./pages/common/NotFound";
 import Unauthorized from "./pages/common/Unauthorized";
 import Tasks from "./pages/Tasks/Tasks";
 import Projects from "./pages/Projects/Projects";
+import ProjectDetail from "./pages/Projects/ProjectDetail";
 
 const App = () => {
   return (
@@ -81,6 +82,8 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+
+        <Route path="/projects/:id" element={<ProjectDetail />} />
 
         {/* Admin Routes */}
         <Route
