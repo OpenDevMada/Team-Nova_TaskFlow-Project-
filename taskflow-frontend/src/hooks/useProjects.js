@@ -45,10 +45,23 @@ export const useProjects = () => {
         setLoading(true);
         resetError();
         try {
-            const newProject = await projectService.createProject(projectData);
-            setProjects(prev => [...prev, newProject]);
-            return newProject;
+            console.log("Données envoyées au service:", projectData);
+            const response = await projectService.createProject(projectData);
+            console.log("Projet créé:", response);
+
+            // Extraire le projet des données de réponse
+            const newProject = response.data?.data || response.data;
+            console.log("Nouveau projet à ajouter:", newProject);
+
+            // Vérifier que le projet a un ID avant de l'ajouter
+            if (newProject && newProject.id) {
+                setProjects(prev => [...prev, newProject]);
+                return newProject;
+            } else {
+                throw new Error("Le projet créé n'a pas d'ID");
+            }
         } catch (error) {
+            console.error("Erreur détaillée:", error.response?.data || error);
             return handleError(error, 'Erreur lors de la création du projet');
         } finally {
             setLoading(false);
@@ -62,7 +75,8 @@ export const useProjects = () => {
             const project = await projectService.getProject(id);
             return project;
         } catch (error) {
-            return handleError(error, 'Erreur lors de la récupération du projet');
+            handleError(error, 'Erreur lors de la récupération du projet');
+            return null;
         } finally {
             setLoading(false);
         }
@@ -90,9 +104,10 @@ export const useProjects = () => {
         try {
             await projectService.deleteProject(id);
             setProjects(prev => prev.filter(project => project.id !== id));
-            return true;
+            return true; // ← Retourner true pour indiquer le succès
         } catch (error) {
-            return handleError(error, 'Erreur lors de la suppression du projet');
+            handleError(error, 'Erreur lors de la suppression du projet');
+            return false; // ← Retourner false en cas d'erreur
         } finally {
             setLoading(false);
         }

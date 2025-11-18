@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Textarea } from "@/components/ui/textarea"
@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/dialog"
 import { Loader2 } from "lucide-react"
 
-// Utiliser des codes hexadécimaux au lieu de oklch
 const colorOptions = [
     { value: "#33C1FF", label: "Bleu clair" },
     { value: "#8B5CF6", label: "Violet" },
@@ -24,14 +23,31 @@ const colorOptions = [
     { value: "#EF4444", label: "Rouge" },
 ]
 
-export default function CreateProjectModal({ isOpen, onClose, onSubmit, loading }) {
+export default function EditProjectModal({ 
+    isOpen, 
+    onClose, 
+    onSubmit, 
+    loading, 
+    project 
+}) {
     const [formData, setFormData] = useState({
         name: "",
         description: "",
-        color: colorOptions[0].value, // Défaut en hex
+        color: colorOptions[0].value,
     })
 
     const [errors, setErrors] = useState({})
+
+    // Initialiser le formulaire avec les données du projet
+    useEffect(() => {
+        if (project) {
+            setFormData({
+                name: project.name || "",
+                description: project.description || "",
+                color: project.color || colorOptions[0].value,
+            })
+        }
+    }, [project])
 
     const handleChange = (field, value) => {
         setFormData((prev) => ({ ...prev, [field]: value }))
@@ -55,7 +71,6 @@ export default function CreateProjectModal({ isOpen, onClose, onSubmit, loading 
             newErrors.description = "La description doit contenir au moins 10 caractères"
         }
 
-        // Validation de la couleur hexadécimale
         if (!formData.color.match(/^#[0-9A-F]{6}$/i)) {
             newErrors.color = "La couleur doit être au format hexadécimal (#FFFFFF)"
         }
@@ -69,54 +84,42 @@ export default function CreateProjectModal({ isOpen, onClose, onSubmit, loading 
 
         if (!validateForm()) return
 
-        // N'envoyer que les champs requis par le backend
+        // N'envoyer que les champs modifiables
         const projectData = {
             name: formData.name.trim(),
             description: formData.description.trim(),
             color: formData.color
         }
 
-        console.log("Données envoyées:", projectData) // Pour debug
-
+        console.log("Données de modification:", projectData)
         await onSubmit(projectData)
-
-        // Réinitialiser le formulaire après soumission réussie
-        setFormData({
-            name: "",
-            description: "",
-            color: colorOptions[0].value,
-        })
-        setErrors({})
     }
 
     const handleClose = () => {
-        setFormData({
-            name: "",
-            description: "",
-            color: colorOptions[0].value,
-        })
         setErrors({})
         onClose()
     }
+
+    if (!project) return null
 
     return (
         <Dialog open={isOpen} onOpenChange={handleClose}>
             <DialogContent className="sm:max-w-[525px]">
                 <DialogHeader>
-                    <DialogTitle>Créer un nouveau projet</DialogTitle>
+                    <DialogTitle>Modifier le projet</DialogTitle>
                     <DialogDescription>
-                        Remplissez les informations pour créer un nouveau projet
+                        Modifiez les informations de votre projet
                     </DialogDescription>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Nom du projet */}
                     <div className="space-y-2">
-                        <Label htmlFor="name">
+                        <Label htmlFor="edit-name">
                             Nom du projet <span className="text-destructive">*</span>
                         </Label>
                         <Input
-                            id="name"
+                            id="edit-name"
                             placeholder="Ex: Refonte du site web"
                             value={formData.name}
                             onChange={(e) => handleChange("name", e.target.value)}
@@ -129,11 +132,11 @@ export default function CreateProjectModal({ isOpen, onClose, onSubmit, loading 
 
                     {/* Description */}
                     <div className="space-y-2">
-                        <Label htmlFor="description">
+                        <Label htmlFor="edit-description">
                             Description <span className="text-destructive">*</span>
                         </Label>
                         <Textarea
-                            id="description"
+                            id="edit-description"
                             placeholder="Décrivez brièvement votre projet..."
                             value={formData.description}
                             onChange={(e) => handleChange("description", e.target.value)}
@@ -147,10 +150,11 @@ export default function CreateProjectModal({ isOpen, onClose, onSubmit, loading 
 
                     {/* Couleur */}
                     <div className="space-y-2">
-                        <Label htmlFor="color">Couleur</Label>
+                        <Label htmlFor="edit-color">Couleur</Label>
                         <div className="flex flex-col gap-3">
                             <div className="flex items-center gap-2">
                                 <select
+                                    id="edit-color"
                                     value={formData.color}
                                     onChange={(e) => handleChange("color", e.target.value)}
                                     className="flex-1 p-2 border rounded-md"
@@ -183,7 +187,7 @@ export default function CreateProjectModal({ isOpen, onClose, onSubmit, loading 
                         </Button>
                         <Button type="submit" disabled={loading}>
                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Créer le projet
+                            Modifier le projet
                         </Button>
                     </DialogFooter>
                 </form>
