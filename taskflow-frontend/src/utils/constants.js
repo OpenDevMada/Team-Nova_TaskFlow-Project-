@@ -53,6 +53,10 @@ export const API_ENDPOINTS = {
     PROJECT_MEMBER: {
         BASE: '/project-members',
         MEMBER_BY_ID: (id) => `/project-members/${id}`,
+        PROJECT_MEMBERS: (projectId) => `/project-members/projects/${projectId}/members`,
+        ADD_MEMBER: (projectId) => `/project-members/projects/${projectId}/members`,
+        UPDATE_ROLE: (id) => `/project-members/${id}/role`,
+        REMOVE_MEMBER: (id) => `/project-members/${id}`,
     },
 
     // Endpoints des tâches
@@ -71,6 +75,11 @@ export const API_ENDPOINTS = {
         DELETE_LIST: (listId) => `/task-lists/lists/${listId}`,
         MOVE_TASK: (taskId) => `/task-lists/tasks/${taskId}/move`,
         REORDER_TASKS: (listId) => `/task-lists/lists/${listId}/reorder`,
+    },
+
+    USERS: {
+        BASE: '/users',
+        SEARCH: '/users/search',
     },
 }
 
