@@ -63,11 +63,12 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/projects', require('./routes/projects/projectRoutes'));
 
 // Route d'affectation des projets aux membres'
-app.use('/api/projects-member', require('./routes/projects/projectMemberRoutes'));
+app.use('/api/project-members', require('./routes/projects/projectMemberRoutes'));
 
 app.use('/api/task-lists', require('./routes/tasks/taskListRoutes'));
 app.use('/api/tasks', require('./routes/tasks/taskRoutes'));
 
+app.use('/api/users', require('./routes/userRoutes'));
 
 // Gestion des routes non trouvées
 app.use(notFoundHandler);

@@ -19,12 +19,9 @@ export const useProjects = () => {
         resetError();
         try {
             const response = await projectService.getProjects();
-            console.log("Response:", response);
-            console.log("Response data:", response.data);
 
             // S'assurer que data est un tableau
             const projectsArray = Array.isArray(response.data) ? response.data : [];
-            console.log("Projects array:", projectsArray);
 
             setProjects(projectsArray);
             return projectsArray;
@@ -45,13 +42,10 @@ export const useProjects = () => {
         setLoading(true);
         resetError();
         try {
-            console.log("Données envoyées au service:", projectData);
             const response = await projectService.createProject(projectData);
-            console.log("Projet créé:", response);
 
             // Extraire le projet des données de réponse
             const newProject = response.data?.data || response.data;
-            console.log("Nouveau projet à ajouter:", newProject);
 
             // Vérifier que le projet a un ID avant de l'ajouter
             if (newProject && newProject.id) {
@@ -73,7 +67,9 @@ export const useProjects = () => {
         resetError();
         try {
             const project = await projectService.getProject(id);
-            return project;
+            console.log("Détail project :", project.data);
+            
+            return project.data;
         } catch (error) {
             handleError(error, 'Erreur lors de la récupération du projet');
             return null;

@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom"
 import Layout from "../Layout/Layout"
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
+import AddMemberModal from "@/components/projects/AddMemberModal"
+import MemberActions from "@/components/projects/MemberActions"
 import { Badge } from "@/components/ui/Badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
@@ -17,7 +19,9 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
-  PlayCircle
+  PlayCircle,
+  UserPlus,
+  Settings
 } from "lucide-react"
 import { useProjects } from "@/hooks/useProjects"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -33,6 +37,7 @@ export default function ProjectDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { getProject, deleteProject, loading, error, resetError } = useProjects()
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false)
 
   const [project, setProject] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -92,6 +97,7 @@ export default function ProjectDetail() {
   }
 
   const formatDate = (dateString) => {
+    if (!dateString) return "Date inconnue"
     return new Date(dateString).toLocaleDateString('fr-FR', {
       day: 'numeric',
       month: 'long',
@@ -103,6 +109,30 @@ export default function ProjectDetail() {
     if (!project.tasks || project.tasks.length === 0) return 0
     const completedTasks = project.tasks.filter(task => task.status === 'completed').length
     return Math.round((completedTasks / project.tasks.length) * 100)
+  }
+
+  // Fonction pour obtenir les initiales d'un membre
+  const getMemberInitials = (member) => {
+    if (member.user) {
+      return `${member.user.firstName?.[0] || ''}${member.user.lastName?.[0] || ''}`.toUpperCase()
+    }
+    return 'U'
+  }
+
+  // Fonction pour obtenir le nom d'affichage d'un membre
+  const getMemberDisplayName = (member) => {
+    if (member.user) {
+      return `${member.user.firstName || ''} ${member.user.lastName || ''}`.trim()
+    }
+    return `Utilisateur ${member.userId?.slice(0, 8)}...`
+  }
+
+  // Fonction pour obtenir l'email d'un membre
+  const getMemberEmail = (member) => {
+    if (member.user) {
+      return member.user.email
+    }
+    return "Email non disponible"
   }
 
   if (isLoading) {
@@ -139,7 +169,7 @@ export default function ProjectDetail() {
 
   return (
     <Layout>
-      <div className="p-6 max-w-6xl mx-auto space-y-6">
+      <div className="p-6 mx-auto space-y-6">
         {/* Header avec navigation */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -159,6 +189,14 @@ export default function ProjectDetail() {
           </div>
 
           <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setIsAddMemberModalOpen(true)}
+              variant="outline"
+              className="gap-2"
+            >
+              <UserPlus className="h-4 w-4" />
+              Ajouter un membre
+            </Button>
             <Button onClick={handleEdit}>
               <Edit className="h-4 w-4 mr-2" />
               Modifier
@@ -335,21 +373,38 @@ export default function ProjectDetail() {
                       <div key={member.id} className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
                           <AvatarFallback className="text-xs">
-                            {member.user?.firstName?.[0]}{member.user?.lastName?.[0]}
+                            {getMemberInitials(member)}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">
-                            {member.user?.firstName} {member.user?.lastName}
+                            {getMemberDisplayName(member)}
+                            {member.userId === project.ownerId && (
+                              <Badge variant="secondary" className="ml-2 text-xs">
+                                Propriétaire
+                              </Badge>
+                            )}
                           </p>
-                          <p className="text-xs text-muted-foreground capitalize">
-                            {member.role}
+                          <p className="text-xs text-muted-foreground truncate">
+                            {getMemberEmail(member)}
                           </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant={member.role === 'admin' ? 'default' : 'outline'} className="text-xs">
+                              {member.role === 'admin' ? 'Administrateur' : member.role === 'member' ? 'Membre' : 'Observateur'}
+                            </Badge>
+                            <p className="text-xs text-muted-foreground">
+                              Rejoint: {formatDate(member.joinedAt)}
+                            </p>
+                          </div>
                         </div>
-                        {member.role === 'admin' && (
-                          <Badge variant="outline" className="text-xs">
-                            Admin
-                          </Badge>
+                        {/* Ajouter les actions pour les membres (sauf le propriétaire) */}
+                        {member.userId !== project.ownerId && (
+                          <MemberActions
+                            member={member}
+                            project={project}
+                            onUpdate={() => fetchProject()} // Rafraîchir les données
+                            onRemove={() => fetchProject()} // Rafraîchir les données
+                          />
                         )}
                       </div>
                     ))}
@@ -385,6 +440,16 @@ export default function ProjectDetail() {
           </div>
         </div>
       </div>
+
+      <AddMemberModal
+        project={project}
+        isOpen={isAddMemberModalOpen}
+        onClose={() => setIsAddMemberModalOpen(false)}
+        onMemberAdded={(newMember) => {
+          // Rafraîchir les données du projet
+          fetchProject()
+        }}
+      />
     </Layout>
   )
 }
