@@ -23,11 +23,10 @@ Le but est d’avoir une **plateforme simple, fluide et moderne**, adaptée à l
 
 ## 2. 👥 Équipe technique
 
-| Nom        | Rôle               | Compétences                  |
+| Nom         | Rôle               | Compétences                  |
 | ----------- | ------------------ | ---------------------------- |
-| **Toky**   | Backend Developer  | Symfony, Node.js, SpringBoot |
-| **Gino**   | Backend Developer  | Laravel, Node.js             |
-| **Johann** | Frontend Developer | React.js                     |
+| **Richard** | Chef de projet / Full stack Developer  | Laravel, Node.js, SpringBoot, Django, React            |
+| **Toky**    | Full stack Developer  | Symfony, Node.js, SpringBoot, React |
 
 ---
 

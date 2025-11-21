@@ -14,7 +14,7 @@ export const useAuth = () => {
             const token = localStorage.getItem('authToken');
             if (token) {
                 const profile = await authService.getProfile();
-                console.log('Profile in checkAuth:', profile); // Debug
+                // console.log('Profile in checkAuth:', profile);
                 setUser(profile.data || profile);
             }
         } catch (error) {

@@ -12,6 +12,7 @@ import Tasks from "./pages/Tasks/Tasks";
 import Projects from "./pages/Projects/Projects";
 import ProjectDetail from "./pages/Projects/ProjectDetail";
 import EditProject from "./pages/Projects/EditProject";
+import ProjectTasks from "./pages/Tasks/ProjectTasks";
 
 const App = () => {
   return (
@@ -86,6 +87,7 @@ const App = () => {
 
         <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/projects/:id/edit" element={<EditProject />} />
+        <Route path="/projects/:projectId/tasks" element={<ProjectTasks />} />
 
         {/* Admin Routes */}
         <Route

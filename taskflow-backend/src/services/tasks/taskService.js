@@ -4,7 +4,7 @@ const { AppError } = require('../../middleware/errorHandler');
 class TaskService {
   // Créer une nouvelle tâche
   static async createTask(taskData, userId) {
-    const { listId, projectId, title, description, priorityId, assigneeId, dueDate } = taskDazta;
+    const { listId, projectId, title, description, priorityId, assigneeId, dueDate } = taskData;
 
     // Vérifier que la liste existe et que l'utilisateur a accès
     const list = await TaskList.findByPk(listId, {
