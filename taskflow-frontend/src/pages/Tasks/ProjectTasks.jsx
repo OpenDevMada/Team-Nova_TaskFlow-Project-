@@ -1,5 +1,6 @@
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import Layout from './Layout/Layout';
+import Layout from '../Layout/Layout';
 import TaskBoard from '@/components/tasks/TaskBoard';
 import { useProjects } from '@/hooks/useProjects';
 import { Loader2 } from 'lucide-react';
@@ -32,7 +33,6 @@ export default function ProjectTasks() {
     return (
         <Layout>
             <div className="p-6 mx-auto max-w-7xl">
-                {/* En-tête du projet */}
                 <div className="mb-6">
                     <div className="flex items-center gap-3 mb-2">
                         <div
@@ -41,12 +41,8 @@ export default function ProjectTasks() {
                         />
                         <h1 className="text-2xl font-bold">{project?.name}</h1>
                     </div>
-                    <p className="text-muted-foreground">
-                        {project?.description}
-                    </p>
+                    <p className="text-muted-foreground">{project?.description}</p>
                 </div>
-
-                {/* Tableau Kanban */}
                 <TaskBoard />
             </div>
         </Layout>

@@ -11,12 +11,12 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import TaskCard from './TaskCard';
-// import EditListModal from './EditListModal';
+import EditListModal from './EditListModal';
 import { useTasks } from '@/hooks/useTasks';
 
 export default function TaskList({
     list,
-    tasks,
+    tasks = [], // Valeur par défaut
     onDragStart,
     onDragOver,
     onDrop,
@@ -25,7 +25,12 @@ export default function TaskList({
     onDeleteList
 }) {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const { deleteList } = useTasks();
+
+    // Vérifier que list existe
+    if (!list) {
+        console.warn('TaskList: list est undefined');
+        return null;
+    }
 
     const handleDeleteList = async () => {
         if (tasks.length > 0) {

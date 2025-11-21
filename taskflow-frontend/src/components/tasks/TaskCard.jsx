@@ -1,3 +1,4 @@
+// components/tasks/TaskCard.jsx
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -11,7 +12,8 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useTasks } from '@/hooks/useTasks';
-// import EditTaskModal from './EditTaskModal';
+import EditTaskModal from './EditTaskModal';
+import TaskDetailModal from './TaskDetailModal';
 
 const priorityConfig = {
     high: { label: 'Haute', variant: 'destructive' },
@@ -27,7 +29,14 @@ const statusConfig = {
 
 export default function TaskCard({ task }) {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const { deleteTask } = useTasks();
+
+    // Vérifier que task existe
+    if (!task) {
+        console.warn('TaskCard: task est undefined');
+        return null;
+    }
 
     const handleDelete = async () => {
         if (confirm(`Êtes-vous sûr de vouloir supprimer la tâche "${task.title}" ?`)) {
@@ -50,27 +59,41 @@ export default function TaskCard({ task }) {
 
     return (
         <>
-            <Card className="cursor-grab hover:shadow-md transition-shadow active:cursor-grabbing">
+            <Card
+                className="cursor-grab hover:shadow-md transition-shadow active:cursor-grabbing"
+                onClick={() => setIsDetailModalOpen(true)}
+            >
                 <CardContent className="p-3 space-y-2">
                     {/* En-tête avec titre et menu */}
                     <div className="flex items-start justify-between gap-2">
                         <h4 className="font-medium text-sm flex-1 leading-tight">
-                            {task.title}
+                            {task.title || 'Titre non défini'}
                         </h4>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <button className="h-6 w-6 flex items-center justify-center rounded hover:bg-muted">
+                                <button
+                                    className="h-6 w-6 flex items-center justify-center rounded hover:bg-muted"
+                                    onClick={(e) => e.stopPropagation()} // Empêcher l'ouverture du modal détail
+                                >
                                     <MoreVertical className="h-3 w-3" />
                                 </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
+                                <DropdownMenuItem
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsEditModalOpen(true);
+                                    }}
+                                >
                                     <Edit className="h-4 w-4 mr-2" />
                                     Modifier
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
-                                    onClick={handleDelete}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDelete();
+                                    }}
                                     className="text-destructive focus:text-destructive"
                                 >
                                     <Trash2 className="h-4 w-4 mr-2" />
@@ -141,6 +164,17 @@ export default function TaskCard({ task }) {
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
                 task={task}
+            />
+
+            {/* Modal de détail */}
+            <TaskDetailModal
+                isOpen={isDetailModalOpen}
+                onClose={() => setIsDetailModalOpen(false)}
+                taskId={task.id}
+                onEdit={() => {
+                    setIsDetailModalOpen(false);
+                    setIsEditModalOpen(true);
+                }}
             />
         </>
     );

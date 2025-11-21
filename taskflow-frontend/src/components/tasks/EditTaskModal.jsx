@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useTasks } from '@/hooks/useTasks';
-import { useProjectMembers } from '@/hooks/useProjectMembers';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,17 +19,15 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/Select';
-import { Loader2, User, Calendar } from 'lucide-react';
+import { Loader2, Calendar, User } from 'lucide-react';
+import { useProjectMembers } from '@/hooks/useProjectMembers';
 
-export default function CreateTaskModal({
+export default function EditTaskModal({
     isOpen,
     onClose,
-    projectId,
-    defaultListId,
-    lists = [], // ✅ Valeur par défaut
-    onTaskCreated
+    task
 }) {
-    const { createTask, loading } = useTasks(projectId);
+    const { updateTask, loading, lists } = useTasks();
     const { getProjectMembers } = useProjectMembers();
     const [members, setMembers] = useState([]);
     const [formData, setFormData] = useState({
@@ -39,66 +36,56 @@ export default function CreateTaskModal({
         listId: '',
         priorityId: 2,
         assigneeId: '',
-        dueDate: ''
+        dueDate: '',
+        statusId: 1
     });
 
-    // ✅ Mettre à jour listId quand defaultListId change
     useEffect(() => {
-        if (defaultListId) {
-            setFormData(prev => ({ ...prev, listId: defaultListId }));
-        }
-    }, [defaultListId]);
+        if (task) {
+            setFormData({
+                title: task.title || '',
+                description: task.description || '',
+                listId: task.listId || '',
+                priorityId: task.priority?.id || 2,
+                assigneeId: task.assignee?.id || '',
+                dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
+                statusId: task.status?.id || 1
+            });
 
-    // ✅ Charger les membres du projet
-    useEffect(() => {
-        const loadMembers = async () => {
-            if (projectId && isOpen) {
-                try {
-                    const membersData = await getProjectMembers(projectId);
-                    setMembers(membersData || []);
-                } catch (error) {
-                    console.error('Erreur chargement membres:', error);
-                }
+            // Charger les membres du projet
+            if (task.project?.id) {
+                loadMembers(task.project.id);
             }
-        };
-        loadMembers();
-    }, [projectId, isOpen, getProjectMembers]);
+        }
+    }, [task]);
 
-    // ✅ S'assurer que lists est un tableau
-    const safeLists = Array.isArray(lists) ? lists : [];
-
-    console.log('📋 CreateTaskModal - Lists reçues:', safeLists);
-    console.log('📋 CreateTaskModal - defaultListId:', defaultListId);
+    const loadMembers = async (projectId) => {
+        try {
+            const membersData = await getProjectMembers(projectId);
+            setMembers(membersData || []);
+        } catch (error) {
+            console.error('Erreur lors du chargement des membres:', error);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!formData.title.trim()) {
-            alert('Le titre est requis');
-            return;
-        }
+        if (!formData.title.trim()) return;
 
-        if (!formData.listId) {
-            alert('Veuillez sélectionner une liste');
-            return;
-        }
-
-        const taskData = {
+        const updateData = {
             title: formData.title.trim(),
             description: formData.description,
             listId: formData.listId,
             priorityId: formData.priorityId,
             assigneeId: formData.assigneeId || null,
-            dueDate: formData.dueDate || null
-            // projectId n'est pas nécessaire car le backend le récupère via listId
+            dueDate: formData.dueDate || null,
+            statusId: formData.statusId
         };
 
-        console.log('📤 Création tâche avec:', taskData);
-
-        const newTask = await createTask(taskData);
-        if (newTask) {
-            onTaskCreated();
-            handleClose();
+        const updatedTask = await updateTask(task.id, updateData);
+        if (updatedTask) {
+            onClose();
         }
     };
 
@@ -106,21 +93,25 @@ export default function CreateTaskModal({
         setFormData({
             title: '',
             description: '',
-            listId: defaultListId || '',
+            listId: '',
             priorityId: 2,
             assigneeId: '',
-            dueDate: ''
+            dueDate: '',
+            statusId: 1
         });
+        setMembers([]);
         onClose();
     };
 
+    if (!task) return null;
+
     return (
         <Dialog open={isOpen} onOpenChange={handleClose}>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Créer une nouvelle tâche</DialogTitle>
+                    <DialogTitle>Modifier la tâche</DialogTitle>
                     <DialogDescription>
-                        Ajoutez une nouvelle tâche à votre projet
+                        Modifiez les détails de votre tâche
                     </DialogDescription>
                 </DialogHeader>
 
@@ -134,7 +125,6 @@ export default function CreateTaskModal({
                             value={formData.title}
                             onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                             required
-                            autoFocus
                         />
                     </div>
 
@@ -146,39 +136,48 @@ export default function CreateTaskModal({
                             placeholder="Description de la tâche..."
                             value={formData.description}
                             onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                            rows={3}
+                            rows={4}
                         />
                     </div>
 
-                    {/* Liste */}
-                    <div className="space-y-2">
-                        <Label htmlFor="list">Liste *</Label>
-                        <Select
-                            value={formData.listId}
-                            onValueChange={(value) => setFormData(prev => ({ ...prev, listId: value }))}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Sélectionnez une liste" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {safeLists.length === 0 ? (
-                                    <SelectItem value="" disabled>
-                                        Aucune liste disponible
-                                    </SelectItem>
-                                ) : (
-                                    safeLists.map((list) => (
+                    <div className="grid grid-cols-2 gap-4">
+                        {/* Liste */}
+                        <div className="space-y-2">
+                            <Label htmlFor="list">Liste *</Label>
+                            <Select
+                                value={formData.listId}
+                                onValueChange={(value) => setFormData(prev => ({ ...prev, listId: value }))}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Sélectionnez une liste" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {lists.map((list) => (
                                         <SelectItem key={list.id} value={list.id}>
                                             {list.name}
                                         </SelectItem>
-                                    ))
-                                )}
-                            </SelectContent>
-                        </Select>
-                        {safeLists.length === 0 && (
-                            <p className="text-xs text-muted-foreground">
-                                Créez d'abord une liste pour ajouter des tâches
-                            </p>
-                        )}
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Statut */}
+                        <div className="space-y-2">
+                            <Label htmlFor="status">Statut</Label>
+                            <Select
+                                value={formData.statusId.toString()}
+                                onValueChange={(value) => setFormData(prev => ({ ...prev, statusId: parseInt(value) }))}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Statut" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="1">À faire</SelectItem>
+                                    <SelectItem value="2">En cours</SelectItem>
+                                    <SelectItem value="3">Terminé</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -187,18 +186,15 @@ export default function CreateTaskModal({
                             <Label htmlFor="priority">Priorité</Label>
                             <Select
                                 value={formData.priorityId.toString()}
-                                onValueChange={(value) => setFormData(prev => ({
-                                    ...prev,
-                                    priorityId: parseInt(value)
-                                }))}
+                                onValueChange={(value) => setFormData(prev => ({ ...prev, priorityId: parseInt(value) }))}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Priorité" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="3">Haute</SelectItem>
+                                    <SelectItem value="1">Haute</SelectItem>
                                     <SelectItem value="2">Moyenne</SelectItem>
-                                    <SelectItem value="1">Basse</SelectItem>
+                                    <SelectItem value="3">Basse</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -211,10 +207,7 @@ export default function CreateTaskModal({
                             </Label>
                             <Select
                                 value={formData.assigneeId}
-                                onValueChange={(value) => setFormData(prev => ({
-                                    ...prev,
-                                    assigneeId: value
-                                }))}
+                                onValueChange={(value) => setFormData(prev => ({ ...prev, assigneeId: value }))}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Non assigné" />
@@ -222,11 +215,8 @@ export default function CreateTaskModal({
                                 <SelectContent>
                                     <SelectItem value="">Non assigné</SelectItem>
                                     {members.map((member) => (
-                                        <SelectItem
-                                            key={member.user?.id || member.id}
-                                            value={member.user?.id || member.id}
-                                        >
-                                            {member.user?.firstName || member.firstName} {member.user?.lastName || member.lastName}
+                                        <SelectItem key={member.user.id} value={member.user.id}>
+                                            {member.user.firstName} {member.user.lastName}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -259,10 +249,10 @@ export default function CreateTaskModal({
                         </Button>
                         <Button
                             type="submit"
-                            disabled={loading || !formData.title.trim() || !formData.listId}
+                            disabled={loading || !formData.title.trim()}
                         >
                             {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                            Créer la tâche
+                            Modifier la tâche
                         </Button>
                     </DialogFooter>
                 </form>

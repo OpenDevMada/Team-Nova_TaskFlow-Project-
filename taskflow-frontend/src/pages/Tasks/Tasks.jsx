@@ -1,85 +1,99 @@
-import Layout from "@/pages/Layout/Layout"
-import TaskCard from "@/components/tasks/TaskCard"
-import { Button } from "@/components/ui/Button"
-import { Plus, Filter, SortAsc } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select"
+import { useEffect, useState } from 'react';
+import Layout from "@/pages/Layout/Layout";
+import TaskCard from "@/components/tasks/TaskCard";
+import { Button } from "@/components/ui/Button";
+import { Plus, Filter, SortAsc, Loader2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
+import { useTasks } from '@/hooks/useTasks';
+import { useProjects } from '@/hooks/useProjects';
+import CreateTaskModal from '@/components/tasks/CreateTaskModal';
 
 export default function Tasks() {
-    const tasks = [
-        {
-            title: "Créer les maquettes de la page d'accueil",
-            priority: "high",
-            dueDate: "15 Oct",
-            assignee: { name: "Sophie M.", avatar: "/diverse-woman-portrait.png" },
-            comments: 5,
-            project: "Refonte du site web",
-            status: "todo",
-        },
-        {
-            title: "Révision du code backend API",
-            priority: "medium",
-            dueDate: "16 Oct",
-            assignee: { name: "Marc L.", avatar: "/man.jpg" },
-            comments: 3,
-            project: "Application mobile",
-            status: "in-progress",
-        },
-        {
-            title: "Tests utilisateurs interface mobile",
-            priority: "high",
-            dueDate: "17 Oct",
-            assignee: { name: "Julie K.", avatar: "/diverse-woman-portrait.png" },
-            comments: 8,
-            project: "Application mobile",
-            status: "in-progress",
-        },
-        {
-            title: "Documentation technique API v2",
-            priority: "low",
-            dueDate: "20 Oct",
-            assignee: { name: "Thomas B.", avatar: "/diverse-group-friends.png" },
-            comments: 2,
-            project: "Migration base de données",
-            status: "todo",
-        },
-        {
-            title: "Optimisation des requêtes SQL",
-            priority: "high",
-            dueDate: "18 Oct",
-            assignee: { name: "Marc L.", avatar: "/man.jpg" },
-            comments: 4,
-            project: "Migration base de données",
-            status: "in-progress",
-        },
-        {
-            title: "Design du système de notifications",
-            priority: "medium",
-            dueDate: "22 Oct",
-            assignee: { name: "Sophie M.", avatar: "/diverse-woman-portrait.png" },
-            comments: 6,
-            project: "Refonte du site web",
-            status: "review",
-        },
-        {
-            title: "Configuration CI/CD",
-            priority: "low",
-            dueDate: "12 Oct",
-            assignee: { name: "Lucas D.", avatar: "/man.jpg" },
-            comments: 1,
-            project: "Migration base de données",
-            status: "done",
-        },
-        {
-            title: "Rédaction du guide utilisateur",
-            priority: "medium",
-            dueDate: "25 Oct",
-            assignee: { name: "Emma R.", avatar: "/diverse-woman-portrait.png" },
-            comments: 2,
-            project: "Application mobile",
-            status: "todo",
-        },
-    ]
+    const { tasks, lists, loading, error, fetchProjectTasks, fetchProjectLists } = useTasks();
+    const { projects, fetchProjects } = useProjects();
+
+    const [selectedProject, setSelectedProject] = useState('all');
+    const [selectedPriority, setSelectedPriority] = useState('all');
+    const [sortBy, setSortBy] = useState('dueDate');
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [allTasks, setAllTasks] = useState([]);
+
+    // Charger les projets au montage
+    useEffect(() => {
+        fetchProjects();
+    }, []);
+
+    // Charger les tâches quand un projet est sélectionné
+    useEffect(() => {
+        const loadTasks = async () => {
+            if (selectedProject === 'all') {
+                // Charger les tâches de tous les projets
+                const allProjectTasks = [];
+                for (const project of projects) {
+                    const projectTasks = await fetchProjectTasks(project.id);
+                    if (projectTasks) {
+                        allProjectTasks.push(...projectTasks);
+                    }
+                }
+                setAllTasks(allProjectTasks);
+            } else {
+                const projectTasks = await fetchProjectTasks(selectedProject);
+                setAllTasks(projectTasks || []);
+            }
+        };
+
+        if (projects.length > 0) {
+            loadTasks();
+        }
+    }, [selectedProject, projects]);
+
+    // Filtrer les tâches
+    const filteredTasks = allTasks.filter(task => {
+        if (selectedPriority !== 'all' && task.priority?.name !== selectedPriority) {
+            return false;
+        }
+        return true;
+    });
+
+    // Trier les tâches
+    const sortedTasks = [...filteredTasks].sort((a, b) => {
+        switch (sortBy) {
+            case 'dueDate':
+                return new Date(a.dueDate || '9999') - new Date(b.dueDate || '9999');
+            case 'priority':
+                return (b.priority?.id || 0) - (a.priority?.id || 0);
+            case 'status':
+                return (a.status?.id || 0) - (b.status?.id || 0);
+            default:
+                return 0;
+        }
+    });
+
+    // Mapper les statuts du backend vers le frontend
+    const getStatusKey = (task) => {
+        if (!task.status) return 'todo';
+        switch (task.status.id) {
+            case 1: return 'todo';
+            case 2: return 'in-progress';
+            case 3: return 'done';
+            default: return 'todo';
+        }
+    };
+
+    const getTasksByStatus = (status) => {
+        return sortedTasks.filter(task => getStatusKey(task) === status);
+    };
+
+    if (loading && allTasks.length === 0) {
+        return (
+            <Layout>
+                <div className="flex items-center justify-center h-64">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+            </Layout>
+        );
+    }
 
     return (
         <Layout>
@@ -88,9 +102,11 @@ export default function Tasks() {
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold text-balance">Mes tâches</h1>
-                        <p className="text-muted-foreground mt-1">Gérez et suivez toutes vos tâches assignées</p>
+                        <p className="text-muted-foreground mt-1">
+                            Gérez et suivez toutes vos tâches assignées
+                        </p>
                     </div>
-                    <Button size="lg" className="gap-2">
+                    <Button size="lg" className="gap-2" onClick={() => setIsCreateModalOpen(true)}>
                         <Plus className="h-5 w-5" />
                         Nouvelle tâche
                     </Button>
@@ -98,20 +114,22 @@ export default function Tasks() {
 
                 {/* Filters */}
                 <div className="flex items-center gap-3">
-                    <Select defaultValue="all">
+                    <Select value={selectedProject} onValueChange={setSelectedProject}>
                         <SelectTrigger className="w-48">
                             <Filter className="h-4 w-4 mr-2" />
                             <SelectValue placeholder="Filtrer par projet" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">Tous les projets</SelectItem>
-                            <SelectItem value="refonte">Refonte du site web</SelectItem>
-                            <SelectItem value="mobile">Application mobile</SelectItem>
-                            <SelectItem value="migration">Migration base de données</SelectItem>
+                            {projects.map(project => (
+                                <SelectItem key={project.id} value={project.id}>
+                                    {project.name}
+                                </SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
 
-                    <Select defaultValue="all">
+                    <Select value={selectedPriority} onValueChange={setSelectedPriority}>
                         <SelectTrigger className="w-48">
                             <Filter className="h-4 w-4 mr-2" />
                             <SelectValue placeholder="Filtrer par priorité" />
@@ -124,7 +142,7 @@ export default function Tasks() {
                         </SelectContent>
                     </Select>
 
-                    <Select defaultValue="dueDate">
+                    <Select value={sortBy} onValueChange={setSortBy}>
                         <SelectTrigger className="w-48">
                             <SortAsc className="h-4 w-4 mr-2" />
                             <SelectValue placeholder="Trier par" />
@@ -132,7 +150,6 @@ export default function Tasks() {
                         <SelectContent>
                             <SelectItem value="dueDate">Date d'échéance</SelectItem>
                             <SelectItem value="priority">Priorité</SelectItem>
-                            <SelectItem value="project">Projet</SelectItem>
                             <SelectItem value="status">Statut</SelectItem>
                         </SelectContent>
                     </Select>
@@ -141,66 +158,70 @@ export default function Tasks() {
                 {/* Tabs */}
                 <Tabs defaultValue="all" className="space-y-6">
                     <TabsList>
-                        <TabsTrigger value="all">Toutes ({tasks.length})</TabsTrigger>
-                        <TabsTrigger value="todo">À faire ({tasks.filter((t) => t.status === "todo").length})</TabsTrigger>
+                        <TabsTrigger value="all">Toutes ({sortedTasks.length})</TabsTrigger>
+                        <TabsTrigger value="todo">
+                            À faire ({getTasksByStatus('todo').length})
+                        </TabsTrigger>
                         <TabsTrigger value="in-progress">
-                            En cours ({tasks.filter((t) => t.status === "in-progress").length})
+                            En cours ({getTasksByStatus('in-progress').length})
                         </TabsTrigger>
-                        <TabsTrigger value="review">
-                            En révision ({tasks.filter((t) => t.status === "review").length})
+                        <TabsTrigger value="done">
+                            Terminées ({getTasksByStatus('done').length})
                         </TabsTrigger>
-                        <TabsTrigger value="done">Terminées ({tasks.filter((t) => t.status === "done").length})</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="all" className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {tasks.map((task, index) => (
-                                <TaskCard key={index} {...task} />
+                            {sortedTasks.map((task) => (
+                                <TaskCard key={task.id} task={task} />
                             ))}
                         </div>
+                        {sortedTasks.length === 0 && (
+                            <p className="text-center text-muted-foreground py-8">
+                                Aucune tâche trouvée
+                            </p>
+                        )}
                     </TabsContent>
 
                     <TabsContent value="todo" className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {tasks
-                                .filter((t) => t.status === "todo")
-                                .map((task, index) => (
-                                    <TaskCard key={index} {...task} />
-                                ))}
+                            {getTasksByStatus('todo').map((task) => (
+                                <TaskCard key={task.id} task={task} />
+                            ))}
                         </div>
                     </TabsContent>
 
                     <TabsContent value="in-progress" className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {tasks
-                                .filter((t) => t.status === "in-progress")
-                                .map((task, index) => (
-                                    <TaskCard key={index} {...task} />
-                                ))}
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="review" className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {tasks
-                                .filter((t) => t.status === "review")
-                                .map((task, index) => (
-                                    <TaskCard key={index} {...task} />
-                                ))}
+                            {getTasksByStatus('in-progress').map((task) => (
+                                <TaskCard key={task.id} task={task} />
+                            ))}
                         </div>
                     </TabsContent>
 
                     <TabsContent value="done" className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {tasks
-                                .filter((t) => t.status === "done")
-                                .map((task, index) => (
-                                    <TaskCard key={index} {...task} />
-                                ))}
+                            {getTasksByStatus('done').map((task) => (
+                                <TaskCard key={task.id} task={task} />
+                            ))}
                         </div>
                     </TabsContent>
                 </Tabs>
             </div>
+
+            {/* Modal de création */}
+            {selectedProject !== 'all' && (
+                <CreateTaskModal
+                    isOpen={isCreateModalOpen}
+                    onClose={() => setIsCreateModalOpen(false)}
+                    projectId={selectedProject}
+                    lists={lists}
+                    onTaskCreated={() => {
+                        fetchProjectTasks(selectedProject);
+                        setIsCreateModalOpen(false);
+                    }}
+                />
+            )}
         </Layout>
-    )
+    );
 }

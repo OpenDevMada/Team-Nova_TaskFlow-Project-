@@ -51,7 +51,7 @@ router.use(authenticate);
 
 /**
  * @swagger
- * /tasklists/projects/{projectId}/lists:
+ * /task-lists/projects/{projectId}/lists:
  *   get:
  *     summary: Récupérer toutes les listes d'un projet
  *     tags: [TaskLists]
@@ -81,7 +81,7 @@ router.get('/projects/:projectId/lists', TaskListController.getProjectLists);
 
 /**
  * @swagger
- * /tasklists/projects/{projectId}/lists:
+ * /task-lists/projects/{projectId}/lists:
  *   post:
  *     summary: Créer une nouvelle liste dans un projet
  *     tags: [TaskLists]
@@ -114,7 +114,7 @@ router.post('/projects/:projectId/lists', TaskListController.createList);
 
 /**
  * @swagger
- * /tasklists/lists/{listId}:
+ * /task-lists/lists/{listId}:
  *   put:
  *     summary: Mettre à jour une liste
  *     tags: [TaskLists]
@@ -143,7 +143,7 @@ router.put('/lists/:listId', TaskListController.updateList);
 
 /**
  * @swagger
- * /tasklists/lists/{listId}:
+ * /task-lists/lists/{listId}:
  *   delete:
  *     summary: Supprimer une liste
  *     tags: [TaskLists]
@@ -166,7 +166,7 @@ router.delete('/lists/:listId', TaskListController.deleteList);
 
 /**
  * @swagger
- * /tasklists/tasks/{taskId}/move:
+ * /task-lists/tasks/{taskId}/move:
  *   patch:
  *     summary: Déplacer une tâche vers une autre liste ou une autre position
  *     tags: [TaskLists]
@@ -203,7 +203,7 @@ router.patch('/tasks/:taskId/move', TaskListController.moveTask);
 
 /**
  * @swagger
- * /tasklists/lists/{listId}/reorder:
+ * /task-lists/lists/{listId}/reorder:
  *   patch:
  *     summary: Réordonner les tâches d’une liste
  *     tags: [TaskLists]

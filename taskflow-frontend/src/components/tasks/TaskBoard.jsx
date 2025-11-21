@@ -12,12 +12,9 @@ export default function TaskBoard() {
     const { projectId } = useParams();
     const {
         lists,
-        tasks,
         loading,
         error,
         fetchProjectLists,
-        fetchProjectTasks,
-        createList,
         updateList,
         deleteList,
         moveTask,
@@ -28,14 +25,26 @@ export default function TaskBoard() {
     const [isCreateListModalOpen, setIsCreateListModalOpen] = useState(false);
     const [selectedListId, setSelectedListId] = useState(null);
 
+    // Charger les listes au montage
     useEffect(() => {
         if (projectId) {
-            fetchProjectLists();
-            fetchProjectTasks();
+            console.log('🚀 Chargement des listes pour projectId:', projectId);
+            fetchProjectLists(projectId);
         }
-    }, [projectId, fetchProjectLists, fetchProjectTasks]);
+    }, [projectId]);
+
+    // Debug: Afficher les listes chargées
+    useEffect(() => {
+        console.log('📋 Lists state mis à jour:', lists);
+        console.log('📋 Nombre de listes:', lists?.length);
+        if (lists?.length > 0) {
+            console.log('📋 Première liste:', lists[0]);
+        }
+    }, [lists]);
 
     const handleCreateTask = (listId) => {
+        console.log('🎯 Ouverture modal création tâche, listId:', listId);
+        console.log('🎯 Lists disponibles:', lists);
         setSelectedListId(listId);
         setIsCreateTaskModalOpen(true);
     };
@@ -53,26 +62,29 @@ export default function TaskBoard() {
 
     const handleDrop = async (e, targetListId) => {
         e.preventDefault();
-
         try {
             const data = JSON.parse(e.dataTransfer.getData('application/json'));
             const { taskId, sourceListId } = data;
 
             if (sourceListId !== targetListId) {
                 await moveTask(taskId, targetListId);
+                fetchProjectLists(projectId);
             }
         } catch (error) {
             console.error('Erreur lors du déplacement:', error);
         }
     };
 
-    if (loading && lists.length === 0) {
+    if (loading && (!lists || lists.length === 0)) {
         return (
             <div className="flex items-center justify-center h-64">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
         );
     }
+
+    // S'assurer que lists est un tableau
+    const safeLists = Array.isArray(lists) ? lists : [];
 
     return (
         <div className="space-y-6">
@@ -95,7 +107,7 @@ export default function TaskBoard() {
                 </div>
             </div>
 
-            {/* Affichage des erreurs */}
+            {/* Erreurs */}
             {error && (
                 <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />
@@ -108,23 +120,34 @@ export default function TaskBoard() {
                 </Alert>
             )}
 
+            {/* Debug info */}
+            <div className="text-xs text-muted-foreground">
+                Debug: {safeLists.length} liste(s) chargée(s) | ProjectId: {projectId}
+            </div>
+
             {/* Board Kanban */}
             <div className="flex gap-4 overflow-x-auto pb-4 min-h-[600px]">
-                {lists.map((list) => (
-                    <TaskList
-                        key={list.id}
-                        list={list}
-                        tasks={tasks.filter(task => task.listId === list.id)}
-                        onDragStart={handleDragStart}
-                        onDragOver={handleDragOver}
-                        onDrop={handleDrop}
-                        onCreateTask={() => handleCreateTask(list.id)}
-                        onUpdateList={updateList}
-                        onDeleteList={deleteList}
-                    />
-                ))}
+                {safeLists.map((list) => {
+                    if (!list) return null;
 
-                {/* Colonne pour créer une nouvelle liste */}
+                    const listTasks = list.tasks || [];
+
+                    return (
+                        <TaskList
+                            key={list.id}
+                            list={list}
+                            tasks={listTasks}
+                            onDragStart={handleDragStart}
+                            onDragOver={handleDragOver}
+                            onDrop={handleDrop}
+                            onCreateTask={() => handleCreateTask(list.id)}
+                            onUpdateList={updateList}
+                            onDeleteList={deleteList}
+                        />
+                    );
+                })}
+
+                {/* Nouvelle liste */}
                 <div className="w-80 flex-shrink-0">
                     <button
                         onClick={() => setIsCreateListModalOpen(true)}
@@ -138,7 +161,7 @@ export default function TaskBoard() {
                 </div>
             </div>
 
-            {/* Modals */}
+            {/* Modal Création Tâche */}
             <CreateTaskModal
                 isOpen={isCreateTaskModalOpen}
                 onClose={() => {
@@ -147,20 +170,21 @@ export default function TaskBoard() {
                 }}
                 projectId={projectId}
                 defaultListId={selectedListId}
-                lists={lists}
+                lists={safeLists}
                 onTaskCreated={() => {
-                    fetchProjectTasks();
+                    fetchProjectLists(projectId);
                     setIsCreateTaskModalOpen(false);
                     setSelectedListId(null);
                 }}
             />
 
+            {/* Modal Création Liste */}
             <CreateListModal
                 isOpen={isCreateListModalOpen}
                 onClose={() => setIsCreateListModalOpen(false)}
                 projectId={projectId}
                 onListCreated={() => {
-                    fetchProjectLists();
+                    fetchProjectLists(projectId);
                     setIsCreateListModalOpen(false);
                 }}
             />
