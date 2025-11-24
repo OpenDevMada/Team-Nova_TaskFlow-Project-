@@ -1,5 +1,6 @@
 const { Project, User, ProjectMember, Task, TaskList, TaskStatus, ActivityLog } = require('../../models');
 const { hasAccess } = require('../../utils/roleHierarchy');
+const TaskListService = require('../tasks/taskListService');
 
 class ProjectService {
 
@@ -15,17 +16,27 @@ class ProjectService {
       throw new Error("Accès refusé : seuls les administrateurs peuvent créer un projet");
     }
 
+    // 1. Créer le projet
     const project = await Project.create({
       ...data,
       ownerId: currentUser.id
     });
 
+    // 2. Ajouter le créateur comme admin du projet
     await ProjectMember.create({
       projectId: project.id,
       userId: currentUser.id,
       role: 'admin',
       invitedBy: currentUser.id
     });
+
+    // 3. CRÉER LES LISTES PAR DÉFAUT
+    try {
+      await TaskListService.createDefaultLists(project.id);
+      console.log(`Listes par défaut créées pour le projet ${project.id}`);
+    } catch (error) {
+      console.error('Erreur lors de la création des listes par défaut:', error);
+    }
 
     return project;
   }
