@@ -1,6 +1,5 @@
-// Projects.jsx
 import { useState } from "react"
-import Swal from 'sweetalert2' // ← Importer SweetAlert
+import Swal from 'sweetalert2'
 import Layout from "../Layout/Layout"
 import ProjectCard from "@/components/projects/ProjectCard"
 import CreateProjectModal from "@/components/projects/CreateProjectModal"

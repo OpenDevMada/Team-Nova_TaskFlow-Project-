@@ -22,7 +22,10 @@ app.use(cookieParser());
 // Limiteur de requêtes
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100
+    max: 100,
+    message: 'Trop de requêtes, veuillez réessayer plus tard.',
+    standardHeaders: true,
+    legacyHeaders: false,
 });
 app.use(limiter);
 

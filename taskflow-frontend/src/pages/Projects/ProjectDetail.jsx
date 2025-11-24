@@ -190,6 +190,14 @@ export default function ProjectDetail() {
 
           <div className="flex items-center gap-2">
             <Button
+              onClick={() => navigate(`/projects/${id}/tasks`)}
+              variant="default"
+              className="gap-2"
+            >
+
+              Tableau Kanban
+            </Button>
+            <Button
               onClick={() => setIsAddMemberModalOpen(true)}
               variant="outline"
               className="gap-2"
@@ -376,34 +384,45 @@ export default function ProjectDetail() {
                             {getMemberInitials(member)}
                           </AvatarFallback>
                         </Avatar>
+
+                        {/* ✅ Structure corrigée */}
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">
-                            {getMemberDisplayName(member)}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-medium truncate">
+                              {getMemberDisplayName(member)}
+                            </span>
                             {member.userId === project.ownerId && (
-                              <Badge variant="secondary" className="ml-2 text-xs">
+                              <Badge variant="secondary" className="text-xs">
                                 Propriétaire
                               </Badge>
                             )}
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate">
+                          </div>
+
+                          <p className="text-xs text-muted-foreground truncate mt-0.5">
                             {getMemberEmail(member)}
                           </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant={member.role === 'admin' ? 'default' : 'outline'} className="text-xs">
-                              {member.role === 'admin' ? 'Administrateur' : member.role === 'member' ? 'Membre' : 'Observateur'}
+
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            <Badge
+                              variant={member.role === 'admin' ? 'default' : 'outline'}
+                              className="text-xs"
+                            >
+                              {member.role === 'admin' ? 'Administrateur' :
+                                member.role === 'member' ? 'Membre' : 'Observateur'}
                             </Badge>
-                            <p className="text-xs text-muted-foreground">
+                            <span className="text-xs text-muted-foreground">
                               Rejoint: {formatDate(member.joinedAt)}
-                            </p>
+                            </span>
                           </div>
                         </div>
-                        {/* Ajouter les actions pour les membres (sauf le propriétaire) */}
+
+                        {/* Actions pour les membres (sauf le propriétaire) */}
                         {member.userId !== project.ownerId && (
                           <MemberActions
                             member={member}
                             project={project}
-                            onUpdate={() => fetchProject()} // Rafraîchir les données
-                            onRemove={() => fetchProject()} // Rafraîchir les données
+                            onUpdate={() => fetchProject()}
+                            onRemove={() => fetchProject()}
                           />
                         )}
                       </div>

@@ -18,7 +18,7 @@ export default function ProjectTasks() {
             }
         };
         loadProject();
-    }, [projectId, getProject]);
+    }, [projectId]);
 
     if (loading && !project) {
         return (
@@ -32,7 +32,7 @@ export default function ProjectTasks() {
 
     return (
         <Layout>
-            <div className="p-6 mx-auto max-w-7xl">
+            <div className="p-6 mx-auto space-y-8">
                 <div className="mb-6">
                     <div className="flex items-center gap-3 mb-2">
                         <div
