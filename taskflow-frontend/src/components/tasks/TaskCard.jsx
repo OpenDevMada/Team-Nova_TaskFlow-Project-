@@ -56,24 +56,8 @@ const TaskCard = ({ title, priority, dueDate, assignee, comments, project }) => 
                     </div>
                 </CardContent>
             </Card>
-
-            {/* Modal d'édition */}
-            <EditTaskModal
-                isOpen={isEditModalOpen}
-                onClose={() => setIsEditModalOpen(false)}
-                task={task}
-            />
-
-            {/* Modal de détail */}
-            <TaskDetailModal
-                isOpen={isDetailModalOpen}
-                onClose={() => setIsDetailModalOpen(false)}
-                taskId={task.id}
-                onEdit={() => {
-                    setIsDetailModalOpen(false);
-                    setIsEditModalOpen(true);
-                }}
-            />
-        </>
+        </Link>
     );
 }
+
+export default TaskCard
