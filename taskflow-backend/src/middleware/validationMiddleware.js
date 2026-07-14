@@ -110,11 +110,142 @@ const validateResetPassword = [
     handleValidationErrors
 ];
 
+// ── Règles de validation pour les Projets ──
+const validateCreateProject = [
+    body('name')
+        .trim()
+        .notEmpty().withMessage('Le nom du projet est requis')
+        .isLength({ max: 255 }).withMessage('Le nom ne peut pas dépasser 255 caractères'),
+    body('description')
+        .optional()
+        .trim(),
+    body('color')
+        .optional()
+        .matches(/^#[0-9A-F]{6}$/i).withMessage('La couleur doit être au format hexadécimal (#RRGGBB)'),
+    handleValidationErrors
+];
+
+const validateUpdateProject = [
+    body('name')
+        .optional()
+        .trim()
+        .notEmpty().withMessage('Le nom du projet ne peut pas être vide')
+        .isLength({ max: 255 }).withMessage('Le nom ne peut pas dépasser 255 caractères'),
+    body('description')
+        .optional()
+        .trim(),
+    body('color')
+        .optional()
+        .matches(/^#[0-9A-F]{6}$/i).withMessage('La couleur doit être au format hexadécimal (#RRGGBB)'),
+    body('isArchived')
+        .optional()
+        .isBoolean().withMessage('isArchived doit être un booléen'),
+    handleValidationErrors
+];
+
+// ── Règles de validation pour les Tâches ──
+const validateCreateTask = [
+    body('title')
+        .trim()
+        .notEmpty().withMessage('Le titre de la tâche est requis')
+        .isLength({ max: 500 }).withMessage('Le titre ne peut pas dépasser 500 caractères'),
+    body('description')
+        .optional()
+        .trim(),
+    body('listId')
+        .notEmpty().withMessage('L\'ID de la liste est requis')
+        .isUUID().withMessage('listId doit être un UUID valide'),
+    body('projectId')
+        .notEmpty().withMessage('L\'ID du projet est requis')
+        .isUUID().withMessage('projectId doit être un UUID valide'),
+    body('priorityId')
+        .optional()
+        .isInt({ min: 1, max: 3 }).withMessage('priorityId doit être 1 (faible), 2 (moyenne) ou 3 (haute)'),
+    body('assigneeId')
+        .optional()
+        .isUUID().withMessage('assigneeId doit être un UUID valide'),
+    body('dueDate')
+        .optional()
+        .isISO8601().withMessage('dueDate doit être une date valide (format ISO 8601)'),
+    handleValidationErrors
+];
+
+const validateUpdateTask = [
+    body('title')
+        .optional()
+        .trim()
+        .notEmpty().withMessage('Le titre ne peut pas être vide')
+        .isLength({ max: 500 }).withMessage('Le titre ne peut pas dépasser 500 caractères'),
+    body('description')
+        .optional()
+        .trim(),
+    body('listId')
+        .optional()
+        .isUUID().withMessage('listId doit être un UUID valide'),
+    body('priorityId')
+        .optional()
+        .isInt({ min: 1, max: 3 }).withMessage('priorityId doit être 1 (faible), 2 (moyenne) ou 3 (haute)'),
+    body('assigneeId')
+        .optional({ values: 'null' })
+        .isUUID().withMessage('assigneeId doit être un UUID valide'),
+    body('statusId')
+        .optional()
+        .isInt({ min: 1, max: 3 }).withMessage('statusId invalide'),
+    body('dueDate')
+        .optional({ values: 'null' })
+        .isISO8601().withMessage('dueDate doit être une date valide (format ISO 8601)'),
+    handleValidationErrors
+];
+
+// ── Règles de validation pour les Listes de tâches ──
+const validateCreateList = [
+    body('name')
+        .trim()
+        .notEmpty().withMessage('Le nom de la liste est requis')
+        .isLength({ max: 255 }).withMessage('Le nom ne peut pas dépasser 255 caractères'),
+    handleValidationErrors
+];
+
+const validateUpdateList = [
+    body('name')
+        .optional()
+        .trim()
+        .notEmpty().withMessage('Le nom ne peut pas être vide')
+        .isLength({ max: 255 }).withMessage('Le nom ne peut pas dépasser 255 caractères'),
+    handleValidationErrors
+];
+
+// ── Règles de validation pour les Membres du projet ──
+const validateAddMember = [
+    body('userId')
+        .notEmpty().withMessage('L\'ID de l\'utilisateur est requis')
+        .isUUID().withMessage('userId doit être un UUID valide'),
+    body('role')
+        .optional()
+        .isIn(['admin', 'member', 'viewer']).withMessage('Le rôle doit être admin, member ou viewer'),
+    handleValidationErrors
+];
+
+const validateUpdateMemberRole = [
+    body('role')
+        .notEmpty().withMessage('Le rôle est requis')
+        .isIn(['admin', 'member', 'viewer']).withMessage('Le rôle doit être admin, member ou viewer'),
+    handleValidationErrors
+];
+
 module.exports = {
     validateRegister,
     validateLogin,
     validateUpdateProfile,
     validateChangePassword,
     validateForgotPassword,
-    validateResetPassword
+    validateResetPassword,
+    validateCreateProject,
+    validateUpdateProject,
+    validateCreateTask,
+    validateUpdateTask,
+    validateCreateList,
+    validateUpdateList,
+    validateAddMember,
+    validateUpdateMemberRole
 };

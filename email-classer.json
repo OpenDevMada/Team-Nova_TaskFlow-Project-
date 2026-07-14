@@ -1,0 +1,130 @@
+{
+    "name": "Email Classification → Notion",
+    "nodes": [
+        {
+            "id": "1",
+            "name": "Manual Trigger",
+            "type": "n8n-nodes-base.manualTrigger",
+            "typeVersion": 1,
+            "position": [
+                300,
+                300
+            ]
+        },
+        {
+            "id": "2",
+            "name": "Sample Email",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 1,
+            "position": [
+                500,
+                300
+            ],
+            "parameters": {
+                "values": {
+                    "string": [
+                        {
+                            "name": "subject",
+                            "value": "Demande d’informations – partenariat"
+                        },
+                        {
+                            "name": "body",
+                            "value": "Bonjour, j’aimerais recevoir plus d’informations sur vos services."
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": "3",
+            "name": "Classify with OpenAI",
+            "type": "n8n-nodes-base.openAIApi",
+            "typeVersion": 2,
+            "position": [
+                700,
+                300
+            ],
+            "parameters": {
+                "model": "gpt-4o-mini",
+                "text": "Classify this email in one word (Support, Sales, Lead, Other): {{$json[\"body\"]}}",
+                "responsePropertyCategory": "text"
+            },
+            "credentials": {
+                "openAIApi": {
+                    "id": "__REPLACE_OPENAI_CREDENTIAL_ID__"
+                }
+            }
+        },
+        {
+            "id": "4",
+            "name": "Create Notion Page",
+            "type": "n8n-nodes-base.notion",
+            "typeVersion": 2,
+            "position": [
+                900,
+                300
+            ],
+            "parameters": {
+                "resource": "page",
+                "operation": "create",
+                "databaseId": "__REPLACE_NOTION_DATABASE_ID__",
+                "propertiesUi": {
+                    "propertyValues": [
+                        {
+                            "key": "Name",
+                            "value": "={{$json[\"subject\"]}}"
+                        },
+                        {
+                            "key": "Category",
+                            "value": "={{$json[\"text\"]}}"
+                        },
+                        {
+                            "key": "Content",
+                            "value": "={{$json[\"body\"]}}"
+                        }
+                    ]
+                }
+            },
+            "credentials": {
+                "notionApi": {
+                    "id": "__REPLACE_NOTION_CREDENTIAL_ID__"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Manual Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Sample Email",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Sample Email": {
+            "main": [
+                [
+                    {
+                        "node": "Classify with OpenAI",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Classify with OpenAI": {
+            "main": [
+                [
+                    {
+                        "node": "Create Notion Page",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

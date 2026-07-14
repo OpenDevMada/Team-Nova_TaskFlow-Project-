@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../../middleware/authMiddleware');
 const projectMemberController = require('../../controllers/projects/projectMemberController');
+const { validateAddMember, validateUpdateMemberRole } = require('../../middleware/validationMiddleware');
 
 /**
  * @swagger
@@ -136,7 +137,7 @@ router.get('/projects/:projectId/members', authenticate, projectMemberController
  *       400:
  *         description: Erreur lors de l'ajout du membre
  */
-router.post('/projects/:projectId/members', authenticate, projectMemberController.create);
+router.post('/projects/:projectId/members', authenticate, validateAddMember, projectMemberController.create);
 
 /**
  * @swagger
@@ -183,7 +184,7 @@ router.post('/projects/:projectId/members', authenticate, projectMemberControlle
  *       400:
  *         description: Erreur lors de la mise à jour
  */
-router.patch('/:id/role', authenticate, projectMemberController.updateRole);
+router.patch('/:id/role', authenticate, validateUpdateMemberRole, projectMemberController.updateRole);
 
 // CORRECTION : Utiliser le même préfixe "/project-members" pour toutes les routes
 /**

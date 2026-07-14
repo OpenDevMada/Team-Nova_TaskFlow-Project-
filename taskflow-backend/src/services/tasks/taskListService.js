@@ -65,8 +65,15 @@ class TaskListService {
       throw new AppError('Permissions insuffisantes pour créer une liste', 403);
     }
 
+    const maxList = await TaskList.findOne({
+      where: { projectId },
+      order: [['position', 'DESC']]
+    });
+    const position = listData.position || (maxList ? maxList.position + 1.0 : 1.0);
+
     const list = await TaskList.create({
       ...listData,
+      position,
       projectId
     });
 

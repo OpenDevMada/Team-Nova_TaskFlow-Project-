@@ -1,4 +1,5 @@
 const { User, Op } = require('../models');
+const { AppError } = require('../middleware/errorHandler');
 
 class UserService {
     static async searchUsers(query = '', currentUser) {
@@ -26,7 +27,7 @@ class UserService {
             return users;
         } catch (error) {
             console.error('Erreur dans UserService.searchUsers:', error);
-            throw new Error('Erreur lors de la recherche des utilisateurs');
+            throw new AppError('Erreur lors de la recherche des utilisateurs', 500);
         }
     }
 
@@ -44,7 +45,7 @@ class UserService {
             return users;
         } catch (error) {
             console.error('Erreur dans UserService.getAllUsers:', error);
-            throw new Error('Erreur lors de la récupération des utilisateurs');
+            throw new AppError('Erreur lors de la récupération des utilisateurs', 500);
         }
     }
 }

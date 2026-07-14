@@ -1,5 +1,7 @@
 const { ProjectMember, Project, User } = require('../../models');
 const { hasAccess } = require('../../utils/roleHierarchy');
+const NotificationService = require('../notificationService');
+const { AppError } = require('../../middleware/errorHandler');
 
 class ProjectMemberService {
     /**
@@ -10,18 +12,14 @@ class ProjectMemberService {
      */
     static async create(data, currentUser) {
 
-        if (!hasAccess(currentUser.roleGlobal, ['admin'])) {
-            throw new Error("Accès refusé : seuls les administrateurs peuvent créer un projet");
-        }
-
         const project = await Project.findByPk(data.projectId);
         if (!project) {
-            throw new Error('Projet non trouvé');
+            throw new AppError('Projet non trouvé', 404);
         }
 
         const user = await User.findByPk(data.userId);
         if (!user) {
-            throw new Error('Membre a assigné au projet non trouvé');
+            throw new AppError('Membre a assigné au projet non trouvé', 404);
         }
 
         const existingAssignment = await ProjectMember.findOne({
@@ -32,15 +30,18 @@ class ProjectMemberService {
         });
 
         if (existingAssignment) {
-            throw new Error('Ce membre est déjà assigné à ce projet');
+            throw new AppError('Ce membre est déjà assigné à ce projet', 409);
         }
 
         const projectMember = await ProjectMember.create({
             projectId: project.id,
             userId: user.id,
-            role: user.role || 'member',
+            role: data.role || 'member',
             invitedBy: currentUser.id
         });
+
+        // Notification d'invitation
+        await NotificationService.notifyProjectInvite(project, user, currentUser);
 
         // Charger les relations pour la réponse
         const newMember = await ProjectMember.findByPk(projectMember.id, {
@@ -70,7 +71,7 @@ class ProjectMemberService {
     static async getProjectMembers(projectId, currentUser) {
         const project = await Project.findByPk(projectId);
         if (!project) {
-            throw new Error('Projet non trouvé');
+            throw new AppError('Projet non trouvé', 404);
         }
 
         // Vérifier que l'utilisateur est membre du projet ou admin global
@@ -82,7 +83,7 @@ class ProjectMemberService {
         });
 
         if (!userMembership && !hasAccess(currentUser.roleGlobal, ['admin'])) {
-            throw new Error("Accès refusé : vous devez être membre de ce projet");
+            throw new AppError("Accès refusé : vous devez être membre de ce projet", 403);
         }
 
         return await ProjectMember.findAll({
@@ -116,7 +117,7 @@ class ProjectMemberService {
         });
 
         if (!projectMember) {
-            throw new Error('Membre non trouvé');
+            throw new AppError('Membre non trouvé', 404);
         }
 
         // Vérifier les permissions
@@ -129,7 +130,7 @@ class ProjectMemberService {
         });
 
         if (!currentUserMembership && !hasAccess(currentUser.roleGlobal, ['admin'])) {
-            throw new Error("Accès refusé : seuls les administrateurs du projet peuvent modifier les rôles");
+            throw new AppError("Accès refusé : seuls les administrateurs du projet peuvent modifier les rôles", 403);
         }
 
         await projectMember.update({ role });
@@ -144,7 +145,7 @@ class ProjectMemberService {
     static async findAll(currentUser) {
 
         if (!hasAccess(currentUser.roleGlobal, ['admin'])) {
-            throw new Error("Accès refusé, seul l'administrateur peux consulter toute la liste !");
+            throw new AppError("Accès refusé, seul l'administrateur peux consulter toute la liste !", 403);
         }
 
         return await ProjectMember.findAll({
@@ -197,11 +198,11 @@ class ProjectMemberService {
         });
 
         if (!projectMember) {
-            throw new Error('Assignation non trouvée');
+            throw new AppError('Assignation non trouvée', 404);
         }
 
         if (projectMember.userId !== currentUser.id || !hasAccess(currentUser.roleGlobal, ['admin'])) {
-            throw new Error("Accès refusé : seuls le membre affécté ou les administrateurs peuvent voir ce detail !");
+            throw new AppError("Accès refusé : seuls le membre affécté ou les administrateurs peuvent voir ce detail !", 403);
         }
 
         return projectMember;
@@ -219,7 +220,7 @@ class ProjectMemberService {
         });
 
         if (!projectMember) {
-            throw new Error('Assignation non trouvée');
+            throw new AppError('Assignation non trouvée', 404);
         }
 
         // Vérifier les permissions
@@ -232,7 +233,7 @@ class ProjectMemberService {
         });
 
         if (!currentUserMembership && !hasAccess(currentUser.roleGlobal, ['admin'])) {
-            throw new Error("Accès refusé : seuls les administrateurs du projet peuvent retirer un membre");
+            throw new AppError("Accès refusé : seuls les administrateurs du projet peuvent retirer un membre", 403);
         }
 
         await projectMember.destroy();

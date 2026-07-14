@@ -1,115 +1,129 @@
-import React from "react"
+import { useEffect, useState } from "react"
 import Layout from "../pages/Layout/Layout"
 import ProjectCard from "@/components/projects/ProjectCard"
 import TaskCard from "@/components/tasks/TaskCard"
 import StatsCard from "@/components/tasks/StatsCard"
 import { Button } from "@/components/ui/Button"
-import { FolderKanban, CheckSquare, Users, TrendingUp, Plus } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { FolderKanban, CheckSquare, Users, TrendingUp, Plus, Loader2, AlertCircle } from "lucide-react"
+import {
+    getDisplayName,
+    getProjectStatus,
+    getTaskStatus,
+    mapProjectToCard,
+    mapTaskToCard,
+} from "@/utils/constants"
+import { dashboardService } from "@/services/dashboardService"
 
-const Dashboard = () => {
-    const stats = [
-        {
-            title: "Projets actifs",
-            value: 12,
-            icon: FolderKanban,
-            trend: { value: 8, isPositive: true },
-            color: "oklch(0.55 0.18 264)",
-        },
-        {
-            title: "Tâches en cours",
-            value: 48,
-            icon: CheckSquare,
-            trend: { value: 12, isPositive: true },
-            color: "oklch(0.65 0.20 310)",
-        },
-        {
-            title: "Membres d'équipe",
-            value: 24,
-            icon: Users,
-            color: "oklch(0.70 0.15 200)",
-        },
-        {
-            title: "Taux de complétion",
-            value: "87%",
-            icon: TrendingUp,
-            trend: { value: 5, isPositive: true },
-            color: "oklch(0.60 0.18 150)",
-        },
-    ]
+const STAT_COLORS = {
+    totalProjects: "oklch(0.55 0.18 264)",
+    myTasks: "oklch(0.65 0.20 310)",
+    totalMembers: "oklch(0.70 0.15 200)",
+    completionRate: "oklch(0.60 0.18 150)",
+}
 
-    const projects = [
-        {
-            title: "Refonte du site web",
-            description: "Modernisation complète de l'interface utilisateur et amélioration de l'expérience",
-            progress: 65,
-            members: 6,
-            status: "active",
-            color: "oklch(0.55 0.18 264)",
-        },
-        {
-            title: "Application mobile",
-            description: "Développement de l'application iOS et Android pour les clients",
-            progress: 40,
-            members: 8,
-            status: "active",
-            color: "oklch(0.65 0.20 310)",
-        },
-        {
-            title: "Migration base de données",
-            description: "Migration vers une nouvelle infrastructure cloud plus performante",
-            progress: 90,
-            members: 4,
-            status: "active",
-            color: "oklch(0.70 0.15 200)",
-        },
-        {
-            title: "Campagne marketing Q2",
-            description: "Planification et exécution de la stratégie marketing du deuxième trimestre",
-            progress: 15,
-            members: 5,
-            status: "planning",
-            color: "oklch(0.60 0.18 150)",
-        },
-    ]
+const statsConfig = [
+    {
+        title: "Projets actifs",
+        key: "totalProjects",
+        icon: FolderKanban,
+        color: STAT_COLORS.totalProjects,
+    },
+    {
+        title: "Tâches en cours",
+        key: "myTasks",
+        icon: CheckSquare,
+        color: STAT_COLORS.myTasks,
+    },
+    {
+        title: "Membres d'équipe",
+        key: "totalMembers",
+        icon: Users,
+        color: STAT_COLORS.totalMembers,
+    },
+    {
+        title: "Taux de complétion",
+        key: "completionRate",
+        icon: TrendingUp,
+        color: STAT_COLORS.completionRate,
+        suffix: "%",
+    },
+]
 
-    const recentTasks = [
-        {
-            title: "Créer les maquettes de la page d'accueil",
-            priority: "high",
-            dueDate: "15 Oct",
-            assignee: { name: "Sophie M.", avatar: "/diverse-woman-portrait.png" },
-            comments: 5,
+export default function Dashboard() {
+    const [stats, setStats] = useState(null)
+    const [projects, setProjects] = useState([])
+    const [tasks, setTasks] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
+
+    const fetchDashboard = async () => {
+        setLoading(true)
+        setError(null)
+
+        try {
+            const [statsResponse, projectsResponse, tasksResponse] = await Promise.all([
+                dashboardService.getStats(),
+                dashboardService.getRecentProjects(4),
+                dashboardService.getRecentTasks(4),
+            ])
+
+            setStats(statsResponse.data?.data || {})
+            setProjects(projectsResponse.data?.data || [])
+            setTasks(tasksResponse.data?.data || [])
+        } catch (apiError) {
+            console.error("Dashboard fetch error:", apiError)
+            setError("Impossible de charger le dashboard. Vérifiez que l'API est disponible.")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        fetchDashboard()
+    }, [])
+
+    const dashboardStats = statsConfig.map((config) => ({
+        title: config.title,
+        value: `${stats?.[config.key] || 0}${config.suffix || ""}`,
+        icon: config.icon,
+        color: config.color,
+    }))
+
+    const mappedProjects = projects.map((project) => ({
+        ...mapProjectToCard(project),
+        status: getProjectStatus(project),
+        members: project.members?.length || project.memberCount || 0,
+        createdAt: project.created_at || project.createdAt,
+    }))
+
+    const mappedTasks = tasks.map((task) => ({
+        ...mapTaskToCard(task),
+        status: getTaskStatus(task),
+        assignee: {
+            name: getDisplayName(task.assignee),
+            avatar: task.assignee?.avatarUrl || "/placeholder.svg",
         },
-        {
-            title: "Révision du code backend API",
-            priority: "medium",
-            dueDate: "16 Oct",
-            assignee: { name: "Marc L.", avatar: "/man.jpg" },
-            comments: 3,
-        },
-        {
-            title: "Tests utilisateurs interface mobile",
-            priority: "high",
-            dueDate: "17 Oct",
-            assignee: { name: "Julie K.", avatar: "/diverse-woman-portrait.png" },
-            comments: 8,
-        },
-        {
-            title: "Documentation technique API v2",
-            priority: "low",
-            dueDate: "20 Oct",
-            assignee: { name: "Thomas B.", avatar: "/diverse-group-friends.png" },
-            comments: 2,
-        },
-    ]
- 
+        comments: task.comments?.length || 0,
+        project: task.project?.name || "",
+    }))
+
+    if (loading) {
+        return (
+            <Layout>
+                <div className="flex min-h-screen items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+            </Layout>
+        )
+    }
+
     return (
         <Layout>
             <div className="p-6 mx-auto space-y-8">
-                {/* Welcome Section */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold">Bienvenue, Aryaman</h1>
+                        <h1 className="text-3xl font-bold">Tableau de bord</h1>
                         <p className="text-gray-500 mt-1">Voici un aperçu de vos projets et tâches</p>
                     </div>
                     <Button size="lg" className="gap-2">
@@ -118,41 +132,55 @@ const Dashboard = () => {
                     </Button>
                 </div>
 
-                {/* Stats Grid */}
+                {error && (
+                    <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {stats.map((stat) => (
+                    {dashboardStats.map((stat) => (
                         <StatsCard key={stat.title} {...stat} />
                     ))}
                 </div>
 
-                {/* Projects Section */}
                 <section className="space-y-4">
                     <div className="flex items-center justify-between">
                         <h2 className="text-2xl font-semibold">Projets récents</h2>
                         <Button variant="ghost">Voir tout</Button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {projects.map((project) => (
-                            <ProjectCard key={project.title} {...project} />
-                        ))}
-                    </div>
+                    {mappedProjects.length === 0 ? (
+                        <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+                            Aucun projet récent pour le moment.
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {mappedProjects.map((project) => (
+                                <ProjectCard key={project.id || project.title} {...project} />
+                            ))}
+                        </div>
+                    )}
                 </section>
 
-                {/* Recent Tasks Section */}
                 <section className="space-y-4">
                     <div className="flex items-center justify-between">
                         <h2 className="text-2xl font-semibold">Tâches récentes</h2>
                         <Button variant="ghost">Voir tout</Button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {recentTasks.map((task, index) => (
-                            <TaskCard key={index} {...task} />
-                        ))}
-                    </div>
+                    {mappedTasks.length === 0 ? (
+                        <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+                            Aucune tâche récente pour le moment.
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {mappedTasks.map((task) => (
+                                <TaskCard key={task.id || task.title} {...task} />
+                            ))}
+                        </div>
+                    )}
                 </section>
             </div>
         </Layout>
     )
 }
-
-export default Dashboard

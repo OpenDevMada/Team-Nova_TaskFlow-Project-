@@ -153,7 +153,7 @@ export default function CreateProjectModal({ isOpen, onClose, onSubmit, loading 
                                 <select
                                     value={formData.color}
                                     onChange={(e) => handleChange("color", e.target.value)}
-                                    className="flex-1 p-2 border rounded-md"
+                                    className="flex-1 p-2 border rounded-md bg-card text-card-foreground border-border"
                                 >
                                     {colorOptions.map((option) => (
                                         <option key={option.value} value={option.value}>

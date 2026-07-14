@@ -27,6 +27,7 @@ import {
 import { MoreVertical, Edit, UserX, Shield, ShieldCheck, ShieldOff } from "lucide-react"
 import { useProjectMembers } from "@/hooks/useProjectMembers"
 import Swal from 'sweetalert2'
+import { swalTheme, swalDanger } from "@/lib/swal"
 
 const roleOptions = [
     { value: "viewer", label: "Observateur", icon: ShieldOff },
@@ -46,12 +47,13 @@ export default function MemberActions({ member, project, onUpdate, onRemove }) {
         }
 
         const result = await Swal.fire({
+            ...swalTheme(),
             title: 'Modifier le rôle',
             html: `
                 <div class="text-left">
                     <p>Changer le rôle de <strong>${member.user.firstName} ${member.user.lastName}</strong> ?</p>
-                    <p class="text-sm text-gray-500 mt-2">
-                        De <span class="font-medium">${roleOptions.find(r => r.value === member.role)?.label}</span> 
+                    <p class="text-sm mt-2">
+                        De <span class="font-medium">${roleOptions.find(r => r.value === member.role)?.label}</span>
                         vers <span class="font-medium">${roleOptions.find(r => r.value === selectedRole)?.label}</span>
                     </p>
                 </div>
@@ -60,19 +62,18 @@ export default function MemberActions({ member, project, onUpdate, onRemove }) {
             showCancelButton: true,
             confirmButtonText: 'Modifier',
             cancelButtonText: 'Annuler',
-            confirmButtonColor: '#3b82f6',
-            cancelButtonColor: '#6b7280',
         })
 
         if (result.isConfirmed) {
             const updatedMember = await updateMemberRole(member.id, selectedRole)
             if (updatedMember) {
                 await Swal.fire({
+                    ...swalTheme(),
                     title: 'Rôle modifié !',
                     text: `Le rôle de ${member.user.firstName} ${member.user.lastName} a été mis à jour`,
                     icon: 'success',
                     timer: 2000,
-                    showConfirmButton: false
+                    showConfirmButton: false,
                 })
                 onUpdate?.(updatedMember)
                 setIsEditRoleOpen(false)
@@ -81,43 +82,44 @@ export default function MemberActions({ member, project, onUpdate, onRemove }) {
     }
 
     const handleRemoveMember = async () => {
-        // Empêcher la suppression du propriétaire
         if (member.userId === project.ownerId) {
             Swal.fire({
+                ...swalTheme(),
                 title: 'Action impossible',
                 text: 'Le propriétaire du projet ne peut pas être retiré',
                 icon: 'warning',
-                confirmButtonColor: '#3b82f6',
             })
             return
         }
 
+        const get = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+
         const result = await Swal.fire({
+            ...swalTheme(),
+            ...swalDanger(),
             title: 'Retirer le membre',
             html: `
                 <div class="text-left">
                     <p>Retirer <strong>${member.user.firstName} ${member.user.lastName}</strong> du projet ?</p>
-                    <p class="text-sm text-red-600 mt-2">Cette action est irréversible.</p>
+                    <p class="text-sm mt-2" style="color: ${get('--destructive') || '#ef4444'}">Cette action est irréversible.</p>
                 </div>
             `,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: 'Retirer',
             cancelButtonText: 'Annuler',
-            confirmButtonColor: '#ef4444',
-            cancelButtonColor: '#6b7280',
-            reverseButtons: true,
         })
 
         if (result.isConfirmed) {
             const success = await removeMember(member.id)
             if (success) {
                 await Swal.fire({
-                    title: 'Membre retiré !',
+                    ...swalTheme(),
+                    title: 'Membre retiré',
                     text: `${member.user.firstName} ${member.user.lastName} a été retiré du projet`,
                     icon: 'success',
                     timer: 2000,
-                    showConfirmButton: false
+                    showConfirmButton: false,
                 })
                 onRemove?.(member.id)
             }

@@ -6,6 +6,7 @@ const {
     verifyRefreshToken
 } = require('../utils/jwtUtils');
 const { AppError } = require('../middleware/errorHandler');
+const EmailService = require('./emailService');
 
 class AuthService {
     /**
@@ -231,11 +232,10 @@ class AuthService {
             usedAt: null
         });
 
-        // En production, enverriez un email ici
-        console.log(`Lien de réinitialisation pour ${email}: ${resetToken}`);
+        // Envoyer l'email de réinitialisation
+        await EmailService.sendPasswordReset(email, resetToken);
 
-        // Pour le développement, on retourne le token
-        if (process.env.NODE_ENV === 'development') {
+        if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
             return {
                 message: 'Lien de réinitialisation généré',
                 resetToken

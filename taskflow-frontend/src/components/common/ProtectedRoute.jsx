@@ -1,5 +1,4 @@
-import { useEffect } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { ROUTES } from "@/utils/constants";
 import Loader from "@/components/common/Loader";
@@ -11,7 +10,6 @@ const ProtectedRoute = ({
     redirectIfAuthenticated = false,
 }) => {
     const { user, loading, isAuthenticated, hasAnyRole, hasPermission } = useAuth();
-    const navigate = useNavigate();
 
     if (loading) return <Loader />;
 

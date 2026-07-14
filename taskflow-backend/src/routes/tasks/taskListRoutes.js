@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const TaskListController = require('../../controllers/tasks/taskListController');
 const { authenticate } = require('../../middleware/authMiddleware');
+const { validateCreateList, validateUpdateList } = require('../../middleware/validationMiddleware');
 
 /**
  * @swagger
@@ -110,7 +111,7 @@ router.get('/projects/:projectId/lists', TaskListController.getProjectLists);
  *       400:
  *         description: Données invalides
  */
-router.post('/projects/:projectId/lists', TaskListController.createList);
+router.post('/projects/:projectId/lists', validateCreateList, TaskListController.createList);
 
 /**
  * @swagger
@@ -139,7 +140,7 @@ router.post('/projects/:projectId/lists', TaskListController.createList);
  *       404:
  *         description: Liste non trouvée
  */
-router.put('/lists/:listId', TaskListController.updateList);
+router.put('/lists/:listId', validateUpdateList, TaskListController.updateList);
 
 /**
  * @swagger

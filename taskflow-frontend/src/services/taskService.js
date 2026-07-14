@@ -3,35 +3,12 @@ import { API_ENDPOINTS } from '../utils/constants';
 
 export const taskService = {
     // Tâches
-    createTask: async (taskData) => {
-        const response = await apiService.post(API_ENDPOINTS.TASKS.BASE, taskData);
-        return response.data?.data || response.data;
-    },
-    
-    getTask: async (taskId) => {
-        const response = await apiService.get(API_ENDPOINTS.TASKS.TASK_BY_ID(taskId));
-        return response.data?.data || response.data;
-    },
-    
-    updateTask: async (taskId, taskData) => {
-        const response = await apiService.put(API_ENDPOINTS.TASKS.TASK_BY_ID(taskId), taskData);
-        return response.data?.data || response.data;
-    },
-    
-    deleteTask: async (taskId) => {
-        const response = await apiService.delete(API_ENDPOINTS.TASKS.TASK_BY_ID(taskId));
-        return response.data?.data || response.data;
-    },
-    
-    completeTask: async (taskId) => {
-        const response = await apiService.patch(API_ENDPOINTS.TASKS.COMPLETE_TASK(taskId));
-        return response.data?.data || response.data;
-    },
-    
-    getProjectTasks: async (projectId) => {
-        const response = await apiService.get(API_ENDPOINTS.TASKS.PROJECT_TASKS(projectId));
-        return response.data?.data || response.data;
-    },
+    createTask: (taskData) => apiService.post(API_ENDPOINTS.TASKS.BASE, taskData),
+    getTask: (taskId) => apiService.get(API_ENDPOINTS.TASKS.TASK_BY_ID(taskId)),
+    updateTask: (taskId, taskData) => apiService.put(API_ENDPOINTS.TASKS.TASK_BY_ID(taskId), taskData),
+    deleteTask: (taskId) => apiService.delete(API_ENDPOINTS.TASKS.TASK_BY_ID(taskId)),
+    completeTask: (taskId) => apiService.patch(API_ENDPOINTS.TASKS.COMPLETE_TASK(taskId)),
+    getProjectTasks: (projectId) => apiService.get(API_ENDPOINTS.TASKS.PROJECT_TASKS(projectId)),
 
     // Listes de tâches
     getProjectLists: async (projectId) => {
