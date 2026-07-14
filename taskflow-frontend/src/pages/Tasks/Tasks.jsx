@@ -1,11 +1,18 @@
+import { useState } from "react"
 import Layout from "@/pages/Layout/Layout"
 import TaskCard from "@/components/tasks/TaskCard"
 import { Button } from "@/components/ui/Button"
-import { Plus, Filter, SortAsc } from "lucide-react"
+import { Plus, Filter, SortAsc, AlertCircle } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function Tasks() {
+    const [activeTab, setActiveTab] = useState("all")
+    const [selectedProject, setSelectedProject] = useState("all")
+    const [selectedPriority, setSelectedPriority] = useState("all")
+    const [error] = useState(null)
+
     const tasks = [
         {
             title: "Créer les maquettes de la page d'accueil",
@@ -91,7 +98,7 @@ export default function Tasks() {
                             Gérez et suivez toutes vos tâches assignées
                         </p>
                     </div>
-                    <Button size="lg" className="gap-2" onClick={() => setIsCreateModalOpen(true)}>
+                    <Button size="lg" className="gap-2">
                         <Plus className="h-5 w-5" />
                         Nouvelle tâche
                     </Button>
@@ -206,20 +213,6 @@ export default function Tasks() {
                     </TabsContent>
                 </Tabs>
             </div>
-
-            {/* Modal de création */}
-            {selectedProject !== 'all' && (
-                <CreateTaskModal
-                    isOpen={isCreateModalOpen}
-                    onClose={() => setIsCreateModalOpen(false)}
-                    projectId={selectedProject}
-                    lists={lists}
-                    onTaskCreated={() => {
-                        fetchProjectTasks(selectedProject);
-                        setIsCreateModalOpen(false);
-                    }}
-                />
-            )}
         </Layout>
     );
 }

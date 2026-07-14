@@ -1,12 +1,15 @@
+const { Op } = require('sequelize');
 const { Project, User, ProjectMember, Task, TaskList, TaskStatus, ActivityLog } = require('../../models');
 const { hasAccess } = require('../../utils/roleHierarchy');
+const { AppError } = require('../../middleware/errorHandler');
+const TaskListService = require('../tasks/taskListService');
 
 class ProjectService {
 
   static async create(data, currentUser) {
 
     if (!hasAccess(currentUser.roleGlobal, ['admin'])) {
-      throw new Error("Accès refusé : seuls les administrateurs peuvent créer un projet");
+      throw new AppError("Accès refusé : seuls les administrateurs peuvent créer un projet", 403);
     }
 
     const project = await Project.create({
@@ -21,6 +24,9 @@ class ProjectService {
       role: 'admin',
       invitedBy: currentUser.id
     });
+
+    // 3. Créer les listes par défaut (Backlog, À faire, En cours, En révision, Terminé)
+    await TaskListService.createDefaultLists(project.id);
 
     return project;
   }
