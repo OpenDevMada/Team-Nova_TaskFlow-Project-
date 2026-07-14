@@ -5,10 +5,12 @@ import ProjectCard from "@/components/projects/ProjectCard"
 import CreateProjectModal from "@/components/projects/CreateProjectModal"
 import EditProjectModal from "@/components/projects/EditProjectModal"
 import { Button } from "@/components/ui/Button"
-import { Plus, Grid3x3, List, Loader2, AlertCircle } from "lucide-react"
+import { Plus, Grid3x3, List, Loader2, AlertCircle, FolderOpen, PlayCircle, Clock, CheckCircle2 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useProjects } from "@/hooks/useProjects"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { calculateProjectProgress, getProjectStatus, mapProjectToCard } from "@/utils/constants"
+import { swalTheme, swalDanger } from "@/lib/swal"
 
 export default function Projects() {
   const {
@@ -28,15 +30,11 @@ export default function Projects() {
 
   const projectsList = Array.isArray(projects) ? projects : []
 
-  const calculateProgress = (project) => {
-    if (!project.tasks || project.tasks.length === 0) return 0;
-    const completedTasks = project.tasks.filter(task => task.status === 'completed').length;
-    return Math.round((completedTasks / project.tasks.length) * 100);
-  };
+  const calculateProgress = (project) => calculateProjectProgress(project)
 
   const getProjectsByStatus = (status) => {
     if (status === "all") return projectsList
-    return projectsList.filter((p) => p.status === status)
+    return projectsList.filter((p) => getProjectStatus(p) === status)
   }
 
   const handleCreateProject = async (projectData) => {
@@ -61,26 +59,18 @@ export default function Projects() {
     setIsEditModalOpen(true)
   }
 
-  // Nouvelle fonction de suppression avec SweetAlert
   const handleDeleteProject = async (projectId) => {
     const projectToDelete = projects.find(p => p.id === projectId)
 
     const result = await Swal.fire({
+      ...swalTheme(),
+      ...swalDanger(),
       title: 'Êtes-vous sûr ?',
-      text: `Vous êtes sur le point de supprimer le projet "${projectToDelete?.name}". Cette action est irréversible !`,
+      text: `Supprimer définitivement "${projectToDelete?.name}" ? Cette action est irréversible.`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#6b7280',
-      confirmButtonText: 'Oui, supprimer !',
+      confirmButtonText: 'Oui, supprimer',
       cancelButtonText: 'Annuler',
-      reverseButtons: true,
-      background: '#fff',
-      customClass: {
-        title: 'text-lg font-semibold',
-        confirmButton: 'px-4 py-2 rounded-md',
-        cancelButton: 'px-4 py-2 rounded-md'
-      }
     })
 
     if (result.isConfirmed) {
@@ -88,93 +78,44 @@ export default function Projects() {
 
       if (success) {
         await Swal.fire({
+          ...swalTheme(),
           title: 'Supprimé !',
-          text: 'Le projet a été supprimé avec succès.',
+          text: 'Le projet a été supprimé.',
           icon: 'success',
-          confirmButtonColor: '#10b981',
-          confirmButtonText: 'OK',
           timer: 2000,
-          timerProgressBar: true
+          showConfirmButton: false,
         })
       } else {
         await Swal.fire({
-          title: 'Erreur !',
-          text: 'Une erreur est survenue lors de la suppression du projet.',
+          ...swalTheme(),
+          ...swalDanger(),
+          title: 'Erreur',
+          text: 'Une erreur est survenue lors de la suppression.',
           icon: 'error',
-          confirmButtonColor: '#ef4444',
-          confirmButtonText: 'OK'
+          confirmButtonText: 'OK',
         })
       }
     }
   }
 
-  // Version alternative plus simple si vous préférez
-  const handleDeleteProjectSimple = async (projectId) => {
-    const projectToDelete = projects.find(p => p.id === projectId)
-
-    Swal.fire({
-      title: 'Supprimer le projet ?',
-      html: `
-        <div class="text-left">
-          <p class="mb-2">Vous allez supprimer le projet :</p>
-          <p class="font-semibold text-red-600">${projectToDelete?.name}</p>
-          <p class="mt-3 text-sm text-gray-500">Cette action ne peut pas être annulée.</p>
-        </div>
-      `,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Supprimer',
-      cancelButtonText: 'Annuler',
-      confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#6b7280',
-      reverseButtons: true,
-      showLoaderOnConfirm: true,
-      preConfirm: async () => {
-        try {
-          return await deleteProject(projectId)
-        } catch (error) {
-          Swal.showValidationMessage('Erreur lors de la suppression')
-          return false
-        }
-      },
-      allowOutsideClick: () => !Swal.isLoading()
-    }).then((result) => {
-      if (result.isConfirmed && result.value) {
-        Swal.fire({
-          title: 'Supprimé !',
-          text: 'Le projet a été supprimé.',
-          icon: 'success',
-          timer: 1500,
-          showConfirmButton: false
-        })
-      } else if (result.isConfirmed && !result.value) {
-        Swal.fire({
-          title: 'Erreur',
-          text: 'La suppression a échoué.',
-          icon: 'error',
-          confirmButtonText: 'OK'
-        })
-      }
-    })
-  }
-
   // Fonction pour rendre les cartes de projet
-  const renderProjectCard = (project) => (
-    <ProjectCard
-      key={project.id}
-      id={project.id}
-      title={project.name}
-      description={project.description}
-      color={project.color}
-      status={project.status || "active"}
-      progress={calculateProgress(project)}
-      members={project.members?.length || 0}
-      createdAt={project.created_at}
-      onDelete={() => handleDeleteProject(project.id)} // Utiliser la version avec SweetAlert
-      onEdit={() => handleOpenEditModal(project)}
-      viewMode={viewMode}
-    />
-  );
+  const renderProjectCard = (project) => {
+    const mappedProject = mapProjectToCard(project)
+
+    return (
+      <ProjectCard
+        key={project.id}
+        {...mappedProject}
+        progress={calculateProgress(project)}
+        status={getProjectStatus(project)}
+        members={project.members?.length || 0}
+        createdAt={project.created_at}
+        onDelete={() => handleDeleteProject(project.id)}
+        onEdit={() => handleOpenEditModal(project)}
+        viewMode={viewMode}
+      />
+    )
+  }
 
   return (
     <Layout>
@@ -262,13 +203,17 @@ export default function Projects() {
               {/* Tous les projets */}
               <TabsContent value="all" className="space-y-4">
                 {projectsList.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-muted-foreground mb-4">
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <FolderOpen className="h-16 w-16 text-muted-foreground/40 mb-4" />
+                    <p className="text-lg font-medium text-card-foreground mb-1">
                       Aucun projet pour le moment
+                    </p>
+                    <p className="text-sm text-muted-foreground mb-6">
+                      Créez votre premier projet pour commencer
                     </p>
                     <Button onClick={() => setIsCreateModalOpen(true)}>
                       <Plus className="h-4 w-4 mr-2" />
-                      Créer votre premier projet
+                      Nouveau projet
                     </Button>
                   </div>
                 ) : (
@@ -287,8 +232,9 @@ export default function Projects() {
               {/* En cours */}
               <TabsContent value="active" className="space-y-4">
                 {getProjectsByStatus("active").length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-muted-foreground">
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <PlayCircle className="h-12 w-12 text-muted-foreground/40 mb-3" />
+                    <p className="text-sm text-muted-foreground">
                       Aucun projet en cours
                     </p>
                   </div>
@@ -308,8 +254,9 @@ export default function Projects() {
               {/* Planification */}
               <TabsContent value="planning" className="space-y-4">
                 {getProjectsByStatus("planning").length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-muted-foreground">
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <Clock className="h-12 w-12 text-muted-foreground/40 mb-3" />
+                    <p className="text-sm text-muted-foreground">
                       Aucun projet en planification
                     </p>
                   </div>
@@ -329,8 +276,9 @@ export default function Projects() {
               {/* Terminés */}
               <TabsContent value="completed" className="space-y-4">
                 {getProjectsByStatus("completed").length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-muted-foreground">
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <CheckCircle2 className="h-12 w-12 text-muted-foreground/40 mb-3" />
+                    <p className="text-sm text-muted-foreground">
                       Aucun projet terminé
                     </p>
                   </div>

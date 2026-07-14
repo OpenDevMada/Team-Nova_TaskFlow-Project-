@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Label } from "@/components/ui/label"
@@ -8,7 +8,6 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
-    DialogFooter,
 } from "@/components/ui/dialog"
 import {
     Select,
@@ -17,11 +16,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/Select"
-import { Loader2, Search, UserPlus, X, Users, Check } from "lucide-react"
+import { Loader2, Search, UserPlus, Users, Check } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/Badge"
 import { useProjectMembers } from "@/hooks/useProjectMembers"
+import { useAuth } from "@/hooks/useAuth"
 import Swal from 'sweetalert2'
+import { swalTheme } from "@/lib/swal"
 
 const roleOptions = [
     { value: "viewer", label: "Observateur", description: "Peut voir le projet mais pas modifier" },
@@ -30,45 +30,62 @@ const roleOptions = [
 ]
 
 export default function AddMemberModal({ project, isOpen, onClose, onMemberAdded }) {
-    const { loading, error, addMember, getAllUsers, resetError } = useProjectMembers()
+    const { loading, addMember, getAllUsers, searchUsers, resetError } = useProjectMembers()
+    const { user: currentUser } = useAuth()
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedRole, setSelectedRole] = useState("member")
     const [allUsers, setAllUsers] = useState([])
     const [filteredUsers, setFilteredUsers] = useState([])
-    const [selectedUsers, setSelectedUsers] = useState([]) // ← Changé pour multiple
+    const [addingIds, setAddingIds] = useState(new Set())
     const [isLoadingUsers, setIsLoadingUsers] = useState(false)
+    const searchTimer = useRef(null)
 
-    // Charger tous les utilisateurs au montage
     useEffect(() => {
         if (isOpen) {
             loadAllUsers()
-            setSelectedUsers([]) // Réinitialiser la sélection
+            setSearchQuery("")
         }
     }, [isOpen])
 
-    // Filtrer les utilisateurs en fonction de la recherche
     useEffect(() => {
+        if (!isOpen) return
+        if (searchTimer.current) clearTimeout(searchTimer.current)
         if (!searchQuery) {
             setFilteredUsers(allUsers)
-        } else {
-            const filtered = allUsers.filter(user =>
-                user.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                user.lastName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                user.email?.toLowerCase().includes(searchQuery.toLowerCase())
-            )
-            setFilteredUsers(filtered)
+            return
         }
-    }, [searchQuery, allUsers])
+        searchTimer.current = setTimeout(async () => {
+            setIsLoadingUsers(true)
+            try {
+                const result = await searchUsers(searchQuery)
+                const users = Array.isArray(result) ? result : (result?.data || [])
+                const excludedIds = new Set([
+                    ...(project.members?.map(m => m.userId) || []),
+                    project.ownerId,
+                    currentUser?.id,
+                ].filter(Boolean))
+                const available = users.filter(user => !excludedIds.has(user.id))
+                setFilteredUsers(available)
+            } catch {
+                setFilteredUsers([])
+            } finally {
+                setIsLoadingUsers(false)
+            }
+        }, 300)
+        return () => { if (searchTimer.current) clearTimeout(searchTimer.current) }
+    }, [searchQuery, allUsers, isOpen])
 
     const loadAllUsers = async () => {
         setIsLoadingUsers(true);
         try {
-            const users = await getAllUsers();
-            const existingMemberIds = new Set(project.members?.map(m => m.userId) || []);
-            const availableUsers = (users || []).filter(user =>
-                !existingMemberIds.has(user.id) &&
-                user.id !== project.ownerId
-            );
+            const response = await getAllUsers();
+            const users = Array.isArray(response) ? response : (response?.data || [])
+            const excludedIds = new Set([
+                ...(project.members?.map(m => m.userId) || []),
+                project.ownerId,
+                currentUser?.id,
+            ].filter(Boolean))
+            const availableUsers = users.filter(user => !excludedIds.has(user.id))
             setAllUsers(availableUsers);
             setFilteredUsers(availableUsers);
         } catch (error) {
@@ -80,112 +97,56 @@ export default function AddMemberModal({ project, isOpen, onClose, onMemberAdded
         }
     };
 
-    const handleUserSelect = (user) => {
-        setSelectedUsers(prev => {
-            const isAlreadySelected = prev.some(u => u.id === user.id);
-            if (isAlreadySelected) {
-                return prev.filter(u => u.id !== user.id);
-            } else {
-                return [...prev, user];
+    const handleQuickAdd = async (user) => {
+        if (addingIds.has(user.id)) return
+        setAddingIds(prev => new Set(prev).add(user.id))
+        try {
+            const result = await addMember(project.id, user.id, selectedRole)
+            if (result) {
+                setFilteredUsers(prev => prev.filter(u => u.id !== user.id))
+                setAllUsers(prev => prev.filter(u => u.id !== user.id))
+                Swal.fire({
+                    ...swalTheme(),
+                    title: 'Ajouté',
+                    text: `${user.firstName} ${user.lastName} a été ajouté(e)`,
+                    icon: 'success',
+                    timer: 1500,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end',
+                })
+                onMemberAdded?.()
             }
-        });
-    }
-
-    const handleRemoveUser = (userId) => {
-        setSelectedUsers(prev => prev.filter(user => user.id !== userId));
-    }
-
-    const handleRemoveAllUsers = () => {
-        setSelectedUsers([]);
-    }
-
-    const handleSubmit = async (e) => {
-        e.preventDefault()
-
-        if (selectedUsers.length === 0) {
+        } catch (err) {
             Swal.fire({
-                title: 'Aucun utilisateur sélectionné',
-                text: 'Veuillez sélectionner au moins un utilisateur à ajouter',
-                icon: 'warning',
-                confirmButtonColor: '#3b82f6',
+                ...swalTheme(),
+                title: 'Erreur',
+                text: `Impossible d'ajouter ${user.firstName} ${user.lastName}`,
+                icon: 'error',
+                timer: 2000,
+                showConfirmButton: false,
+                toast: true,
+                position: 'top-end',
             })
-            return
-        }
-
-        const result = await Swal.fire({
-            title: 'Confirmer l\'ajout',
-            html: `
-                <div class="text-left">
-                    <p>Ajouter ${selectedUsers.length} utilisateur(s) au projet ?</p>
-                    <div class="mt-2 max-h-32 overflow-y-auto">
-                        ${selectedUsers.map(user =>
-                `<p class="text-sm">• ${user.firstName} ${user.lastName}</p>`
-            ).join('')}
-                    </div>
-                    <p class="text-sm text-gray-500 mt-2">Rôle : ${roleOptions.find(r => r.value === selectedRole)?.label}</p>
-                </div>
-            `,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: `Ajouter ${selectedUsers.length} membre(s)`,
-            cancelButtonText: 'Annuler',
-            confirmButtonColor: '#10b981',
-            cancelButtonColor: '#6b7280',
-        })
-
-        if (result.isConfirmed) {
-            let successCount = 0;
-            let errorCount = 0;
-
-            // Ajouter tous les utilisateurs sélectionnés
-            for (const user of selectedUsers) {
-                const newMember = await addMember(project.id, user.id, selectedRole);
-                if (newMember) {
-                    successCount++;
-                } else {
-                    errorCount++;
-                }
-            }
-
-            if (successCount > 0) {
-                await Swal.fire({
-                    title: 'Membres ajoutés !',
-                    html: `
-                        <div class="text-left">
-                            <p>${successCount} membre(s) ajouté(s) avec succès</p>
-                            ${errorCount > 0 ?
-                            `<p class="text-sm text-orange-600 mt-1">${errorCount} erreur(s) lors de l'ajout</p>` :
-                            ''
-                        }
-                        </div>
-                    `,
-                    icon: successCount === selectedUsers.length ? 'success' : 'warning',
-                    timer: 3000,
-                    showConfirmButton: false
-                });
-
-                // Recharger la liste des utilisateurs disponibles
-                loadAllUsers();
-                onMemberAdded?.();
-                handleClose();
-            }
+        } finally {
+            setAddingIds(prev => {
+                const next = new Set(prev)
+                next.delete(user.id)
+                return next
+            })
         }
     }
 
     const handleClose = () => {
-        setSelectedUsers([]);
         setSearchQuery("");
         setSelectedRole("member");
+        setAddingIds(new Set())
         resetError();
         onClose();
     }
 
     const getInitials = (user) => {
         return `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase();
-    }
-
-    const isUserSelected = (user) => {
-        return selectedUsers.some(u => u.id === user.id);
     }
 
     return (
@@ -197,65 +158,14 @@ export default function AddMemberModal({ project, isOpen, onClose, onMemberAdded
                         Ajouter des membres
                     </DialogTitle>
                     <DialogDescription>
-                        Sélectionnez un ou plusieurs utilisateurs à ajouter au projet "{project.name}"
+                        Cliquez sur <strong>+</strong> à côté d'un utilisateur pour l'ajouter au projet &ldquo;{project.name}&rdquo;
                     </DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="flex-1 flex flex-col gap-4">
-                    {/* Utilisateurs sélectionnés */}
-                    {selectedUsers.length > 0 && (
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                                <Label>Utilisateurs sélectionnés ({selectedUsers.length})</Label>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={handleRemoveAllUsers}
-                                    className="h-8 text-xs"
-                                >
-                                    Tout effacer
-                                </Button>
-                            </div>
-                            <div className="border rounded-lg max-h-32 overflow-y-auto">
-                                {selectedUsers.map((user) => (
-                                    <div key={user.id} className="flex items-center justify-between p-3 border-b last:border-b-0">
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="h-8 w-8">
-                                                <AvatarFallback className="text-xs">
-                                                    {getInitials(user)}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <div>
-                                                <p className="text-sm font-medium">
-                                                    {user.firstName} {user.lastName}
-                                                </p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {user.email}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => handleRemoveUser(user.id)}
-                                            className="h-6 w-6"
-                                        >
-                                            <X className="h-3 w-3" />
-                                        </Button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Recherche et liste des utilisateurs */}
+                <div className="flex-1 flex flex-col gap-4">
+                    {/* Recherche */}
                     <div className="space-y-3 flex-1 flex flex-col">
                         <div className="space-y-2">
-                            <Label htmlFor="user-search">
-                                Rechercher des utilisateurs
-                            </Label>
                             <div className="relative">
                                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                 <Input
@@ -268,17 +178,30 @@ export default function AddMemberModal({ project, isOpen, onClose, onMemberAdded
                             </div>
                         </div>
 
-                        {/* En-tête de la liste */}
-                        <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-medium flex items-center gap-2">
-                                <Users className="h-4 w-4" />
-                                Utilisateurs disponibles ({filteredUsers.length})
-                            </h4>
-                            {selectedUsers.length > 0 && (
-                                <span className="text-xs text-muted-foreground">
-                                    {selectedUsers.length} sélectionné(s)
-                                </span>
-                            )}
+                        {/* Sélection du rôle */}
+                        <div className="flex items-center gap-3">
+                            <div className="flex-1">
+                                <Select value={selectedRole} onValueChange={setSelectedRole}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {roleOptions.map((option) => (
+                                            <SelectItem key={option.value} value={option.value}>
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium">{option.label}</span>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {option.description}
+                                                    </span>
+                                                </div>
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <p className="text-xs text-muted-foreground whitespace-nowrap">
+                                {filteredUsers.length} disponible{filteredUsers.length > 1 ? 's' : ''}
+                            </p>
                         </div>
 
                         {/* Liste des utilisateurs */}
@@ -291,38 +214,40 @@ export default function AddMemberModal({ project, isOpen, onClose, onMemberAdded
                             ) : filteredUsers.length > 0 ? (
                                 <div className="divide-y">
                                     {filteredUsers.map((user) => {
-                                        const isSelected = isUserSelected(user);
+                                        const isAdding = addingIds.has(user.id)
                                         return (
-                                            <button
+                                            <div
                                                 key={user.id}
-                                                type="button"
-                                                onClick={() => handleUserSelect(user)}
-                                                className={`w-full p-3 text-left transition-colors duration-150 ${isSelected
-                                                        ? 'bg-primary/10 border-l-4 border-l-primary'
-                                                        : 'hover:bg-muted/50'
-                                                    }`}
+                                                className="flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors"
                                             >
-                                                <div className="flex items-center gap-3">
-                                                    <div className="flex items-center gap-3 flex-1">
-                                                        <Avatar className="h-8 w-8">
-                                                            <AvatarFallback className="text-xs">
-                                                                {getInitials(user)}
-                                                            </AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="text-sm font-medium truncate">
-                                                                {user.firstName} {user.lastName}
-                                                            </p>
-                                                            <p className="text-xs text-muted-foreground truncate">
-                                                                {user.email}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                    {isSelected && (
-                                                        <Check className="h-4 w-4 text-primary flex-shrink-0" />
-                                                    )}
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarFallback className="text-xs">
+                                                        {getInitials(user)}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium truncate">
+                                                        {user.firstName} {user.lastName}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground truncate">
+                                                        {user.email}
+                                                    </p>
                                                 </div>
-                                            </button>
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    disabled={isAdding || loading}
+                                                    onClick={() => handleQuickAdd(user)}
+                                                    className="gap-1 shrink-0"
+                                                >
+                                                    {isAdding ? (
+                                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                                    ) : (
+                                                        <UserPlus className="h-3 w-3" />
+                                                    )}
+                                                    Ajouter
+                                                </Button>
+                                            </div>
                                         );
                                     })}
                                 </div>
@@ -341,56 +266,7 @@ export default function AddMemberModal({ project, isOpen, onClose, onMemberAdded
                             )}
                         </div>
                     </div>
-
-                    {/* Sélection du rôle */}
-                    <div className="space-y-2">
-                        <Label htmlFor="role">Rôle pour tous les membres sélectionnés</Label>
-                        <Select value={selectedRole} onValueChange={setSelectedRole}>
-                            <SelectTrigger id="role">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {roleOptions.map((option) => (
-                                    <SelectItem key={option.value} value={option.value}>
-                                        <div className="flex flex-col">
-                                            <span className="font-medium">{option.label}</span>
-                                            <span className="text-xs text-muted-foreground">
-                                                {option.description}
-                                            </span>
-                                        </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Affichage des erreurs */}
-                    {error && (
-                        <div className="p-3 border border-destructive/50 bg-destructive/10 rounded-lg">
-                            <p className="text-sm text-destructive">{error}</p>
-                        </div>
-                    )}
-
-                    <DialogFooter className="mt-auto">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={handleClose}
-                            disabled={loading}
-                        >
-                            Annuler
-                        </Button>
-                        <Button
-                            type="submit"
-                            disabled={loading || selectedUsers.length === 0}
-                            className="gap-2"
-                        >
-                            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                            <UserPlus className="h-4 w-4" />
-                            Ajouter {selectedUsers.length > 0 ? `(${selectedUsers.length})` : ''}
-                        </Button>
-                    </DialogFooter>
-                </form>
+                </div>
             </DialogContent>
         </Dialog>
     )

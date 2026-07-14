@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "@/components/common/ProtectedRoute";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
+import ForgotPassword from "./pages/Auth/ForgotPassword";
+import ResetPassword from "./pages/Auth/ResetPassword";
 import { ROUTES, ROLES } from '@/utils/constants';
 import { ToastContainer } from 'react-toastify';
 import Dashboard from "./pages/Dashboard";
@@ -57,6 +59,24 @@ const App = () => {
           }
         />
 
+        {/* Forgot & Reset Password - public with redirect if authenticated */}
+        <Route
+          path={ROUTES.FORGOT_PASSWORD}
+          element={
+            <ProtectedRoute redirectIfAuthenticated>
+              <ForgotPassword />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={`${ROUTES.RESET_PASSWORD}/:token`}
+          element={
+            <ProtectedRoute redirectIfAuthenticated>
+              <ResetPassword />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Dashboard accessible après connexion */}
         <Route
           path={ROUTES.DASHBOARD}
@@ -87,7 +107,6 @@ const App = () => {
 
         <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/projects/:id/edit" element={<EditProject />} />
-        <Route path="/projects/:projectId/tasks" element={<ProjectTasks />} />
 
         {/* Admin Routes */}
         <Route

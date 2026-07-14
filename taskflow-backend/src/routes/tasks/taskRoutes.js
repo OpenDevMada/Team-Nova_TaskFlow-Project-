@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const TaskController = require('../../controllers/tasks/taskController');
 const { authenticate } = require('../../middleware/authMiddleware');
+const { validateCreateTask, validateUpdateTask } = require('../../middleware/validationMiddleware');
 
 /**
  * @swagger
@@ -124,7 +125,9 @@ router.use(authenticate);
  *       404:
  *         description: Liste non trouvée
  */
-router.post('/', TaskController.createTask);
+router.post('/', validateCreateTask, TaskController.createTask);
+
+router.get('/calendar', TaskController.getTasksByDateRange);
 
 /**
  * @swagger
@@ -180,7 +183,7 @@ router.get('/:taskId', TaskController.getTask);
  *       400:
  *         description: Erreur de mise à jour
  */
-router.put('/:taskId', TaskController.updateTask);
+router.put('/:taskId', validateUpdateTask, TaskController.updateTask);
 
 /**
  * @swagger
@@ -274,4 +277,25 @@ router.patch('/:taskId/complete', TaskController.completeTask);
  */
 router.get('/projects/:projectId/tasks', TaskController.getProjectTasks);
 
+/**
+ * @swagger
+ * /tasks/calendar:
+ *   get:
+ *     summary: Récupérer les tâches par plage de dates (calendrier)
+ *     tags: [Tasks]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         required: true
+ *         schema: { type: string, format: date }
+ *       - in: query
+ *         name: endDate
+ *         required: true
+ *         schema: { type: string, format: date }
+ *     responses:
+ *       200:
+ *         description: Tâches groupées par date
+ */
 module.exports = router;

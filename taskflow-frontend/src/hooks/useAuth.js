@@ -62,7 +62,7 @@ export const useAuth = () => {
     };
 
     const hasAnyRole = (roles) =>
-        user && roles.some((role) => user.role === role)
+        user && roles.some((role) => user.roleGlobal === role || user.role === role)
 
     const hasPermission = (perm) =>
         user && user.permissions?.includes(perm)

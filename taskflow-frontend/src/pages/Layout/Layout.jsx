@@ -4,24 +4,19 @@ import Footer from "./Footer"
 import Header from "./Header"
 import { Sidebar } from "./Sidebar"
 
-const Layout = ({ children, userRole }) => {
+const Layout = ({ children }) => {
   const { user } = useAuth()
-  const [sidebarOpen, setSidebarOpen] = useState(false) // Par défaut ouvert
-
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen)
-  }
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-background">
       <Sidebar
-        userRole={user?.role}
-        isOpen={sidebarOpen}
-        onToggle={toggleSidebar}
+        mobileOpen={sidebarOpen}
+        onMobileClose={() => setSidebarOpen(false)}
       />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header onToggleSidebar={toggleSidebar} />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
+      <div className="flex-1 flex flex-col min-w-0">
+        <Header onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-4 sm:p-6 lg:p-8">
           {children}
         </main>
         <Footer />

@@ -1,13 +1,13 @@
 const Footer = () => {
-    const currentYear = new Date().getFullYear()
+  const currentYear = new Date().getFullYear()
 
-    return (
-        <footer className="bg-zinc-50 text-center dark:bg-neutral-700 lg:text-left">
-            <div className="p-2 text-center text-surface dark:text-white">
-                © {currentYear} Copyright - <a href="#!">openDev Mada</a>
-            </div>
-        </footer>
-    )
+  return (
+    <footer className="border-t border-border bg-card/50 px-6 py-3">
+      <p className="text-center text-sm text-muted-foreground">
+        &copy; {currentYear} TaskFlow — openDev Mada
+      </p>
+    </footer>
+  )
 }
 
 export default Footer

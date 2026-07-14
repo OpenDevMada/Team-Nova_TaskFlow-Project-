@@ -1,10 +1,27 @@
-import React, { useState, useRef, useEffect } from "react"
+import React, { useState, useRef, useEffect, useMemo } from "react"
+
+function collectLabels(children) {
+  const map = {}
+  React.Children.forEach(children, (child) => {
+    if (child?.type === SelectContent) {
+      React.Children.forEach(child.props?.children, (item) => {
+        if (item?.type === SelectItem) {
+          const label = typeof item.props.children === 'string'
+            ? item.props.children
+            : item.props.value
+          map[item.props.value] = label
+        }
+      })
+    }
+  })
+  return map
+}
 
 export function Select({ value, onValueChange, children }) {
   const [isOpen, setIsOpen] = useState(false)
   const selectRef = useRef(null)
+  const labelMap = useMemo(() => collectLabels(children), [children])
 
-  // Fermer le dropdown quand on clique à l'extérieur
   useEffect(() => {
     function handleClickOutside(event) {
       if (selectRef.current && !selectRef.current.contains(event.target)) {
@@ -24,7 +41,8 @@ export function Select({ value, onValueChange, children }) {
             value, 
             onValueChange, 
             isOpen, 
-            setIsOpen 
+            setIsOpen,
+            labelMap,
           })
         }
         if (child.type === SelectContent) {
@@ -41,21 +59,20 @@ export function Select({ value, onValueChange, children }) {
   )
 }
 
-export function SelectTrigger({ className = "", children, value, isOpen, setIsOpen }) {
-  // Trouver la valeur affichée en cherchant dans les enfants SelectValue ou utiliser la valeur directement
-  const displayValue = value || "Sélectionner..."
+export function SelectTrigger({ className = "", value, isOpen, setIsOpen, labelMap = {} }) {
+  const displayValue = value ? (labelMap[value] || value) : "Sélectionner..."
 
   return (
     <button
       type="button"
-      className={`flex h-10 w-full items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`flex h-10 w-full items-center justify-between rounded-md border border-border bg-card px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
       onClick={() => setIsOpen(!isOpen)}
     >
-      <span className={value ? "text-gray-900" : "text-gray-400"}>
+      <span className={value ? "text-card-foreground" : "text-muted-foreground"}>
         {displayValue}
       </span>
       <svg
-        className={`h-4 w-4 opacity-50 transform transition-transform ${isOpen ? "rotate-180" : ""}`}
+        className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`}
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -66,9 +83,7 @@ export function SelectTrigger({ className = "", children, value, isOpen, setIsOp
   )
 }
 
-export function SelectValue({ placeholder = "Sélectionner..." }) {
-  // Ce composant est utilisé comme placeholder dans SelectTrigger
-  // Il n'a pas besoin de render quelque chose directement
+export function SelectValue() {
   return null
 }
 
@@ -76,7 +91,7 @@ export function SelectContent({ children, value, onValueChange, isOpen, setIsOpe
   if (!isOpen) return null
 
   return (
-    <div className="absolute top-full left-0 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg z-50">
+    <div className="absolute top-full left-0 mt-1 w-full rounded-md border border-border bg-card shadow-lg z-50">
       <div className="max-h-48 overflow-auto rounded-md py-1">
         {React.Children.map(children, (child) => {
           if (child.type === SelectItem) {
@@ -96,8 +111,8 @@ export function SelectContent({ children, value, onValueChange, isOpen, setIsOpe
 export function SelectItem({ value, children, onValueChange, setIsOpen, isSelected }) {
   return (
     <div
-      className={`cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 ${
-        isSelected ? "bg-blue-50 text-blue-600" : ""
+      className={`cursor-pointer px-3 py-2 text-sm text-card-foreground hover:bg-muted ${
+        isSelected ? "bg-primary/10 text-primary" : ""
       }`}
       onClick={() => {
         if (onValueChange) {

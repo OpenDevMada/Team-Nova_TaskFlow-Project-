@@ -1,5 +1,7 @@
 const { Task, TaskList, Project, ProjectMember, TaskStatus, PriorityLevel, User, TaskComment } = require('../../models');
+const { Op } = require('sequelize');
 const { AppError } = require('../../middleware/errorHandler');
+const NotificationService = require('../notificationService');
 
 class TaskService {
   // Créer une nouvelle tâche
@@ -59,6 +61,14 @@ class TaskService {
       position,
       createdBy: userId
     });
+
+    // Notification à la personne assignée
+    if (assigneeId) {
+      const creator = await User.findByPk(userId, {
+        attributes: ['id', 'firstName', 'lastName']
+      });
+      await NotificationService.notifyTaskAssigned(task, assigneeId, creator);
+    }
 
     // Retourner la tâche avec les relations
     return await Task.findByPk(task.id, {
@@ -148,7 +158,30 @@ class TaskService {
       }
     }
 
+    const oldAssigneeId = task.assigneeId;
+    const oldStatusId = task.statusId;
+
     await task.update(updateData);
+
+    // Notification si nouvelle assignation
+    if (updateData.assigneeId && updateData.assigneeId !== oldAssigneeId) {
+      const updater = await User.findByPk(userId, {
+        attributes: ['id', 'firstName', 'lastName']
+      });
+      const freshTask = await Task.findByPk(taskId);
+      await NotificationService.notifyTaskAssigned(freshTask, updateData.assigneeId, updater);
+    }
+
+    // Notification si changement de statut
+    if (updateData.statusId && updateData.statusId !== oldStatusId) {
+      const updater = await User.findByPk(userId, {
+        attributes: ['id', 'firstName', 'lastName']
+      });
+      const freshTask = await Task.findByPk(taskId);
+      if (freshTask.assigneeId && freshTask.assigneeId !== userId) {
+        await NotificationService.notifyStatusChanged(freshTask, 'précédent', 'nouveau', updater);
+      }
+    }
 
     // Retourner la tâche mise à jour avec les relations
     return await Task.findByPk(taskId, {
@@ -242,12 +275,51 @@ class TaskService {
       throw new AppError('Accès non autorisé', 403);
     }
 
+    const oldStatusId = task.statusId;
+
     await task.update({
-      statusId: 3, // Done
+      statusId: 3,
       completedAt: new Date()
     });
 
+    // Notification de changement de statut
+    if (task.assigneeId && task.assigneeId !== userId) {
+      const user = await User.findByPk(userId, {
+        attributes: ['id', 'firstName', 'lastName']
+      });
+      await NotificationService.notifyStatusChanged(task, 'À faire/En cours', 'Terminé', user);
+    }
+
     return task;
+  }
+
+  // Récupérer les tâches par plage de dates (calendrier)
+  static async getTasksByDateRange(userId, startDate, endDate) {
+    const projectIds = await ProjectMember.findAll({
+      where: { userId },
+      attributes: ['projectId']
+    }).then(members => members.map(m => m.projectId));
+
+    if (projectIds.length === 0) return [];
+
+    const whereClause = {
+      projectId: { [Op.in]: projectIds },
+      dueDate: {
+        [Op.gte]: startDate,
+        [Op.lte]: endDate
+      }
+    };
+
+    return await Task.findAll({
+      where: whereClause,
+      include: [
+        { model: Project, as: 'project', attributes: ['id', 'name', 'color'] },
+        { model: TaskStatus, as: 'status' },
+        { model: PriorityLevel, as: 'priority' },
+        { model: User, as: 'assignee', attributes: ['id', 'firstName', 'lastName', 'avatarUrl'] }
+      ],
+      order: [['dueDate', 'ASC'], ['position', 'ASC']]
+    });
   }
 }
 

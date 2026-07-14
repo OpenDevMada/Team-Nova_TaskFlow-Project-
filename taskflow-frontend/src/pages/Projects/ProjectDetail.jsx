@@ -25,7 +25,9 @@ import {
 } from "lucide-react"
 import { useProjects } from "@/hooks/useProjects"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { calculateProjectProgress, formatDate, getDisplayName, getDisplayInitials, getProjectStatus, isTaskDone } from "@/utils/constants"
 import Swal from 'sweetalert2'
+import { swalTheme, swalDanger } from "@/lib/swal"
 
 const statusConfig = {
   planning: { label: "Planification", variant: "secondary", icon: Clock },
@@ -36,7 +38,7 @@ const statusConfig = {
 export default function ProjectDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { getProject, deleteProject, loading, error, resetError } = useProjects()
+  const { getProject, deleteProject, error, resetError } = useProjects()
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false)
 
   const [project, setProject] = useState(null)
@@ -59,33 +61,35 @@ export default function ProjectDetail() {
   }
 
   const handleDelete = async () => {
+    const get = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+
     const result = await Swal.fire({
+      ...swalTheme(),
+      ...swalDanger(),
       title: 'Supprimer le projet ?',
       html: `
         <div class="text-left">
           <p class="mb-2">Vous allez supprimer définitivement le projet :</p>
-          <p class="font-semibold text-red-600">${project.name}</p>
-          <p class="mt-3 text-sm text-gray-500">Toutes les données associées seront perdues.</p>
+          <p class="font-semibold" style="color: ${get('--destructive') || '#ef4444'}">${project.name}</p>
+          <p class="mt-3 text-sm">Toutes les données associées seront perdues.</p>
         </div>
       `,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Supprimer',
       cancelButtonText: 'Annuler',
-      confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#6b7280',
-      reverseButtons: true,
     })
 
     if (result.isConfirmed) {
       const success = await deleteProject(id)
       if (success) {
         await Swal.fire({
+          ...swalTheme(),
           title: 'Supprimé !',
-          text: 'Le projet a été supprimé avec succès.',
+          text: 'Le projet a été supprimé.',
           icon: 'success',
           timer: 1500,
-          showConfirmButton: false
+          showConfirmButton: false,
         })
         navigate('/projects')
       }
@@ -96,36 +100,13 @@ export default function ProjectDetail() {
     navigate(`/projects/${id}/edit`)
   }
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "Date inconnue"
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    })
-  }
-
-  const calculateProgress = () => {
-    if (!project.tasks || project.tasks.length === 0) return 0
-    const completedTasks = project.tasks.filter(task => task.status === 'completed').length
-    return Math.round((completedTasks / project.tasks.length) * 100)
-  }
+  const calculateProgress = () => calculateProjectProgress(project)
 
   // Fonction pour obtenir les initiales d'un membre
-  const getMemberInitials = (member) => {
-    if (member.user) {
-      return `${member.user.firstName?.[0] || ''}${member.user.lastName?.[0] || ''}`.toUpperCase()
-    }
-    return 'U'
-  }
+  const getMemberInitials = (member) => getDisplayInitials(member.user)
 
   // Fonction pour obtenir le nom d'affichage d'un membre
-  const getMemberDisplayName = (member) => {
-    if (member.user) {
-      return `${member.user.firstName || ''} ${member.user.lastName || ''}`.trim()
-    }
-    return `Utilisateur ${member.userId?.slice(0, 8)}...`
-  }
+  const getMemberDisplayName = (member) => getDisplayName(member.user, `Utilisateur ${member.userId?.slice(0, 8)}...`)
 
   // Fonction pour obtenir l'email d'un membre
   const getMemberEmail = (member) => {
@@ -164,7 +145,7 @@ export default function ProjectDetail() {
     )
   }
 
-  const StatusIcon = statusConfig[project.status]?.icon || Clock
+  const StatusIcon = statusConfig[getProjectStatus(project)]?.icon || Clock
   const progress = calculateProgress()
 
   return (
@@ -268,7 +249,7 @@ export default function ProjectDetail() {
                   </div>
                   <div className="text-center p-3 bg-muted rounded-lg">
                     <div className="font-semibold text-2xl text-green-600">
-                      {project.tasks?.filter(t => t.status === 'completed').length || 0}
+                      {project.tasks?.filter(t => isTaskDone(t)).length || 0}
                     </div>
                     <div className="text-muted-foreground">Tâches terminées</div>
                   </div>
@@ -316,8 +297,8 @@ export default function ProjectDetail() {
                   <label className="text-sm font-medium text-muted-foreground">Statut</label>
                   <div className="flex items-center gap-2 mt-1">
                     <StatusIcon className="h-4 w-4" />
-                    <Badge variant={statusConfig[project.status]?.variant || "secondary"}>
-                      {statusConfig[project.status]?.label || "Inconnu"}
+                    <Badge variant={statusConfig[getProjectStatus(project)]?.variant || "secondary"}>
+                      {statusConfig[getProjectStatus(project)]?.label || "Inconnu"}
                     </Badge>
                   </div>
                 </div>
@@ -464,8 +445,7 @@ export default function ProjectDetail() {
         project={project}
         isOpen={isAddMemberModalOpen}
         onClose={() => setIsAddMemberModalOpen(false)}
-        onMemberAdded={(newMember) => {
-          // Rafraîchir les données du projet
+        onMemberAdded={() => {
           fetchProject()
         }}
       />

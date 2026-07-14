@@ -73,6 +73,18 @@ app.use('/api/tasks', require('./routes/tasks/taskRoutes'));
 
 app.use('/api/users', require('./routes/userRoutes'));
 
+// Dashboard
+app.use('/api/dashboard', require('./routes/dashboardRoutes'));
+
+// Notifications
+app.use('/api/notifications', require('./routes/notificationRoutes'));
+
+// Commentaires (imbriqués sous /api/tasks/:taskId/comments)
+app.use('/api/tasks/:taskId/comments', require('./routes/tasks/taskCommentRoutes'));
+
+// Upload de fichiers
+app.use('/api/upload', require('./routes/uploadRoutes'));
+
 // Gestion des routes non trouvées
 app.use(notFoundHandler);
 

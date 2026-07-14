@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const projectController = require('../../controllers/projects/projectController');
 const { authenticate } = require('../../middleware/authMiddleware');
+const { validateCreateProject, validateUpdateProject } = require('../../middleware/validationMiddleware');
 
 /**
  * @swagger
@@ -82,7 +83,7 @@ const { authenticate } = require('../../middleware/authMiddleware');
  *       400:
  *         description: Erreur lors de la création du projet
  */
-router.post('/', authenticate, projectController.create);
+router.post('/', authenticate, validateCreateProject, projectController.create);
 
 /**
  * @swagger
@@ -166,7 +167,7 @@ router.get('/:id', authenticate, projectController.findById);
  *       400:
  *         description: Erreur lors de la mise à jour
  */
-router.put('/:id', authenticate, projectController.update);
+router.put('/:id', authenticate, validateUpdateProject, projectController.update);
 
 /**
  * @swagger

@@ -1,22 +1,14 @@
 const { Project, User, ProjectMember, Task, TaskList, TaskStatus, ActivityLog } = require('../../models');
 const { hasAccess } = require('../../utils/roleHierarchy');
-const TaskListService = require('../tasks/taskListService');
 
 class ProjectService {
 
-  /**
-   * Crée un nouveau projet 
-   * @param {Object} data 
-   * @param {Object} currentUser 
-   * @returns 
-   */
   static async create(data, currentUser) {
 
     if (!hasAccess(currentUser.roleGlobal, ['admin'])) {
       throw new Error("Accès refusé : seuls les administrateurs peuvent créer un projet");
     }
 
-    // 1. Créer le projet
     const project = await Project.create({
       ...data,
       ownerId: currentUser.id
@@ -30,29 +22,24 @@ class ProjectService {
       invitedBy: currentUser.id
     });
 
-    // 3. CRÉER LES LISTES PAR DÉFAUT
-    try {
-      await TaskListService.createDefaultLists(project.id);
-      console.log(`Listes par défaut créées pour le projet ${project.id}`);
-    } catch (error) {
-      console.error('Erreur lors de la création des listes par défaut:', error);
-    }
-
     return project;
   }
 
-  /**
-   * Récupère tous les projets
-   * @param {Object} currentUser 
-   * @returns 
-   */
   static async findAll(currentUser) {
+    const whereClause = {};
 
-    if (!hasAccess(currentUser.roleGlobal, ['viewer'])) {
-      throw new Error("Accès refusé");
+    // Si l'utilisateur n'est pas admin global, filtrer par ses projets
+    if (!hasAccess(currentUser.roleGlobal, ['admin'])) {
+      const projectIds = await ProjectMember.findAll({
+        where: { userId: currentUser.id },
+        attributes: ['projectId']
+      }).then(members => members.map(m => m.projectId));
+
+      whereClause.id = { [Op.in]: projectIds };
     }
 
     return await Project.findAll({
+      where: whereClause,
       include: [
         {
           model: User,
@@ -84,18 +71,7 @@ class ProjectService {
     });
   }
 
-  /**
-   * Récupère un projet par son ID
-   * @param {number} id 
-   * @param {Object} currentUser 
-   * @returns 
-   */
   static async findById(id, currentUser) {
-
-    if (!hasAccess(currentUser.roleGlobal, ['viewer'])) {
-      throw new Error("Accès refusé");
-    }
-
     const project = await Project.findByPk(id, {
       include: [
         {
@@ -140,48 +116,58 @@ class ProjectService {
     });
 
     if (!project) {
-      throw new Error('Projet non trouvé');
+      throw new AppError('Projet non trouvé', 404);
+    }
+
+    // Vérifier que l'utilisateur est membre du projet ou admin global
+    if (!hasAccess(currentUser.roleGlobal, ['admin'])) {
+      const membership = await ProjectMember.findOne({
+        where: { projectId: id, userId: currentUser.id }
+      });
+      if (!membership) {
+        throw new AppError('Accès refusé : vous n\'êtes pas membre de ce projet', 403);
+      }
     }
 
     return project;
   }
 
-  /**
-   * Met à jour un projet
-   * @param {number} id 
-   * @param {Object} data 
-   * @param {Object} currentUser 
-   * @returns 
-   */
   static async update(id, data, currentUser) {
     const project = await Project.findByPk(id);
 
     if (!project) {
-      throw new Error('Projet non trouvé');
+      throw new AppError('Projet non trouvé', 404);
     }
 
-    if (project.ownerId !== currentUser.id && !hasAccess(currentUser.roleGlobal, ['admin'])) {
-      throw new Error("Accès refusé : seuls le propriétaire ou les administrateurs peuvent modifier ce projet");
+    // Vérifier les permissions : owner OU admin du projet OU admin global
+    const isOwner = project.ownerId === currentUser.id;
+    const isGlobalAdmin = hasAccess(currentUser.roleGlobal, ['admin']);
+    const isProjectAdmin = await ProjectMember.findOne({
+      where: { projectId: id, userId: currentUser.id, role: 'admin' }
+    });
+
+    if (!isOwner && !isGlobalAdmin && !isProjectAdmin) {
+      throw new AppError("Accès refusé : seuls le propriétaire ou les administrateurs du projet peuvent le modifier", 403);
     }
 
     await project.update(data);
     return project;
   }
 
-  /**
-   * Supprime un projet
-   * @param {number} id 
-   * @param {Object} currentUser 
-   * @returns 
-   */
   static async delete(id, currentUser) {
     const project = await Project.findByPk(id);
     if (!project) {
-      throw new Error('Projet non trouvé');
+      throw new AppError('Projet non trouvé', 404);
     }
 
-    if (project.ownerId !== currentUser.id && !hasAccess(currentUser.roleGlobal, ['admin'])) {
-      throw new Error("Accès refusé : seuls le propriétaire ou les administrateurs peuvent supprimer ce projet");
+    const isOwner = project.ownerId === currentUser.id;
+    const isGlobalAdmin = hasAccess(currentUser.roleGlobal, ['admin']);
+    const isProjectAdmin = await ProjectMember.findOne({
+      where: { projectId: id, userId: currentUser.id, role: 'admin' }
+    });
+
+    if (!isOwner && !isGlobalAdmin && !isProjectAdmin) {
+      throw new AppError("Accès refusé : seuls le propriétaire ou les administrateurs du projet peuvent le supprimer", 403);
     }
 
     await project.destroy();

@@ -1,10 +1,12 @@
 const TaskService = require('../../services/tasks/taskService');
 const { asyncHandler } = require('../../middleware/errorHandler');
+const ActivityLogService = require('../../services/activityLogService');
 
 class TaskController {
   // Créer une nouvelle tâche
   static createTask = asyncHandler(async (req, res) => {
     const task = await TaskService.createTask(req.body, req.user.id);
+    await ActivityLogService.logTaskCreated(task, req.user, req);
 
     res.status(201).json({
       success: true,
@@ -28,6 +30,7 @@ class TaskController {
   static updateTask = asyncHandler(async (req, res) => {
     const { taskId } = req.params;
     const task = await TaskService.updateTask(taskId, req.body, req.user.id);
+    await ActivityLogService.logTaskUpdated(task, req.user, req.body, req);
 
     res.json({
       success: true,
@@ -39,7 +42,9 @@ class TaskController {
   // Supprimer une tâche
   static deleteTask = asyncHandler(async (req, res) => {
     const { taskId } = req.params;
+    const task = await TaskService.getTask(taskId, req.user.id);
     const result = await TaskService.deleteTask(taskId, req.user.id);
+    await ActivityLogService.logTaskDeleted(task, req.user, req);
 
     res.json({
       success: true,
@@ -65,10 +70,32 @@ class TaskController {
     });
   });
 
+  // Récupérer les tâches par plage de dates (calendrier)
+  static getTasksByDateRange = asyncHandler(async (req, res) => {
+    const { startDate, endDate } = req.query;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ success: false, message: 'startDate et endDate sont requis (format ISO 8601)' });
+    }
+
+    const tasks = await TaskService.getTasksByDateRange(req.user.id, startDate, endDate);
+
+    // Grouper les tâches par date
+    const grouped = {};
+    for (const task of tasks) {
+      const dateKey = task.dueDate;
+      if (!grouped[dateKey]) grouped[dateKey] = [];
+      grouped[dateKey].push(task);
+    }
+
+    res.json({ success: true, data: { tasks, grouped } });
+  });
+
   // Marquer une tâche comme terminée
   static completeTask = asyncHandler(async (req, res) => {
     const { taskId } = req.params;
     const task = await TaskService.completeTask(taskId, req.user.id);
+    await ActivityLogService.logTaskCompleted(task, req.user, req);
 
     res.json({
       success: true,
